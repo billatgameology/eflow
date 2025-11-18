@@ -4,6 +4,8 @@ import Toolbar from './Toolbar';
 import EquipmentPanel from '../EquipmentPanel/EquipmentPanel';
 import Canvas from '../Canvas/Canvas';
 import PropertiesPanel from '../PropertiesPanel/PropertiesPanel';
+import KeyboardShortcutsHelp from './KeyboardShortcutsHelp';
+import Toast from './Toast';
 
 export default function MainLayout() {
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
@@ -25,6 +27,12 @@ export default function MainLayout() {
         {/* Right: Properties Panel */}
         <PropertiesPanel />
       </div>
+
+      {/* Keyboard Shortcuts Help */}
+      <KeyboardShortcutsHelp />
+
+      {/* Toast Notifications */}
+      <Toast />
     </div>
   );
 }

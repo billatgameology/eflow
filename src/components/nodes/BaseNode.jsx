@@ -2,11 +2,17 @@ import { useState } from 'react';
 import { Handle, Position } from 'reactflow';
 import { useSimulationStore } from '../../stores/useSimulationStore';
 import { useUIStore } from '../../stores/useUIStore';
+import { useDiagramStore } from '../../stores/useDiagramStore';
+import { useToastStore } from '../Layout/Toast';
 import { EQUIPMENT_CATEGORIES } from '../../data/equipmentDefinitions';
 import DualPowerIndicator from './DualPowerIndicator';
+import { v4 as uuidv4 } from 'uuid';
 
 export default function BaseNode({ id, data, selected }) {
   const { faultedNodes, toggleNodeFault, powerFlowMap } = useSimulationStore();
+  const { copyToClipboard } = useUIStore();
+  const { removeNode, addNode, nodes } = useDiagramStore();
+  const { addToast } = useToastStore();
   const [isHovered, setIsHovered] = useState(false);
   const isFaulted = faultedNodes.has(id);
   const powerInfo = powerFlowMap.get(id);
@@ -29,6 +35,26 @@ export default function BaseNode({ id, data, selected }) {
   };
 
   const glowAnimation = selected ? 'animate-pulse-slow' : '';
+
+  const handleCopy = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const nodeToCopy = nodes.find(node => node.id === id);
+    if (nodeToCopy) {
+      copyToClipboard({
+        type: 'node',
+        data: JSON.parse(JSON.stringify(nodeToCopy))
+      });
+      addToast('Node copied', 'success');
+    }
+  };
+
+  const handleDelete = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    removeNode(id);
+    addToast('Node deleted', 'info');
+  };
 
   return (
     <div
@@ -144,7 +170,7 @@ export default function BaseNode({ id, data, selected }) {
         </div>
       )}
 
-      {/* Fault Toggle Button - shown on hover */}
+      {/* Fault Toggle Button (Alert/Fault Mode) - shown on hover */}
       {isHovered && (
         <button
           onMouseDown={(e) => {
@@ -154,7 +180,6 @@ export default function BaseNode({ id, data, selected }) {
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            console.log('Toggling node fault for:', id);
             toggleNodeFault(id);
           }}
           className={`
@@ -162,7 +187,7 @@ export default function BaseNode({ id, data, selected }) {
             border-2 border-black transition-all duration-200 cursor-pointer z-50
             ${isFaulted
               ? 'bg-neon-red hover:bg-red-600'
-              : 'bg-gray-600 hover:bg-neon-yellow'
+              : 'bg-gray-600 hover:bg-neon-red'
             }
           `}
           style={{
@@ -171,12 +196,92 @@ export default function BaseNode({ id, data, selected }) {
               : '0 0 8px rgba(156, 163, 175, 0.6)',
             pointerEvents: 'auto',
           }}
-          title={isFaulted ? 'Click to reconnect' : 'Click to disconnect'}
+          title={isFaulted ? 'Click to clear fault' : 'Click to inject fault'}
         >
-          <span className="text-white text-sm font-bold" style={{ pointerEvents: 'none' }}>
-            {isFaulted ? '✓' : '✕'}
-          </span>
+          {/* Alert/Warning symbol */}
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-white"
+          >
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
         </button>
+      )}
+
+      {/* Copy and Delete buttons - bottom right on hover */}
+      {isHovered && (
+        <div className="absolute -bottom-3 -right-3 flex gap-2 z-50">
+          {/* Copy Button */}
+          <button
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onClick={handleCopy}
+            className="w-8 h-8 rounded-full flex items-center justify-center bg-neon-cyan hover:bg-blue-400 border-2 border-black transition-all duration-200 cursor-pointer"
+            style={{
+              boxShadow: '0 0 12px rgba(0, 217, 255, 0.8)',
+              pointerEvents: 'auto',
+            }}
+            title="Copy node (Ctrl+C)"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-black"
+            >
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            </svg>
+          </button>
+
+          {/* Delete Button */}
+          <button
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onClick={handleDelete}
+            className="w-8 h-8 rounded-full flex items-center justify-center bg-neon-red hover:bg-red-600 border-2 border-black transition-all duration-200 cursor-pointer"
+            style={{
+              boxShadow: '0 0 12px rgba(255, 0, 85, 0.8)',
+              pointerEvents: 'auto',
+            }}
+            title="Delete node (Delete)"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-white"
+            >
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+              <line x1="10" y1="11" x2="10" y2="17" />
+              <line x1="14" y1="11" x2="14" y2="17" />
+            </svg>
+          </button>
+        </div>
       )}
 
       {/* Fault Indicator - permanent when faulted */}

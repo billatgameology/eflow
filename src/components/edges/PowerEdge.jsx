@@ -30,7 +30,7 @@ export default function PowerEdge({
     targetX,
     targetY,
     targetPosition,
-    borderRadius: 0, // Sharp 90-degree corners
+    borderRadius: 20, // Rounded corners
   });
 
   // Determine edge color based on power flow
@@ -111,7 +111,6 @@ export default function PowerEdge({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log('Toggling edge fault for:', id);
               toggleEdgeFault(id);
             }}
           />

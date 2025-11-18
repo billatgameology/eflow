@@ -13,41 +13,88 @@ import { nodeTypes } from '../nodes/nodeTypes';
 import { edgeTypes } from '../edges/edgeTypes';
 
 export default function Canvas({ onInit }) {
-  const { nodes, edges, setNodes, setEdges, addEdge: addEdgeToStore, addNode } = useDiagramStore();
+  const { nodes, edges, setNodes, setEdges, addEdge: addEdgeToStore, addNode, saveToHistory } = useDiagramStore();
   const { selectNode, clearSelection } = useUIStore();
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
+  const dragStartRef = useRef(false);
 
   const onNodesChange = useCallback(
     (changes) => {
-      // Handle node position changes, etc.
-      // For now, we'll implement a simple version
+      let needsHistorySave = false;
+      let updatedNodes = [...nodes];
+
       changes.forEach((change) => {
-        if (change.type === 'position' && change.position) {
-          const updatedNodes = nodes.map((node) =>
+        if (change.type === 'position') {
+          // Track drag start
+          if (change.dragging && !dragStartRef.current) {
+            dragStartRef.current = true;
+            saveToHistory();
+          }
+          // Track drag end
+          if (!change.dragging && dragStartRef.current) {
+            dragStartRef.current = false;
+          }
+
+          // Update position
+          if (change.position) {
+            updatedNodes = updatedNodes.map((node) =>
+              node.id === change.id
+                ? { ...node, position: change.position }
+                : node
+            );
+          }
+        } else if (change.type === 'remove') {
+          needsHistorySave = true;
+          updatedNodes = updatedNodes.filter((node) => node.id !== change.id);
+        } else if (change.type === 'select') {
+          updatedNodes = updatedNodes.map((node) =>
             node.id === change.id
-              ? { ...node, position: change.position }
+              ? { ...node, selected: change.selected }
               : node
           );
-          setNodes(updatedNodes);
-        } else if (change.type === 'remove') {
-          const updatedNodes = nodes.filter((node) => node.id !== change.id);
-          setNodes(updatedNodes);
+        } else if (change.type === 'dimensions') {
+          updatedNodes = updatedNodes.map((node) =>
+            node.id === change.id && change.dimensions
+              ? { ...node, width: change.dimensions.width, height: change.dimensions.height }
+              : node
+          );
         }
       });
+
+      if (needsHistorySave) {
+        saveToHistory();
+      }
+
+      setNodes(updatedNodes);
     },
-    [nodes, setNodes]
+    [nodes, setNodes, saveToHistory]
   );
 
   const onEdgesChange = useCallback(
     (changes) => {
+      let needsHistorySave = false;
+      let updatedEdges = [...edges];
+
       changes.forEach((change) => {
         if (change.type === 'remove') {
-          const updatedEdges = edges.filter((edge) => edge.id !== change.id);
-          setEdges(updatedEdges);
+          needsHistorySave = true;
+          updatedEdges = updatedEdges.filter((edge) => edge.id !== change.id);
+        } else if (change.type === 'select') {
+          updatedEdges = updatedEdges.map((edge) =>
+            edge.id === change.id
+              ? { ...edge, selected: change.selected }
+              : edge
+          );
         }
       });
+
+      if (needsHistorySave) {
+        saveToHistory();
+      }
+
+      setEdges(updatedEdges);
     },
-    [edges, setEdges]
+    [edges, setEdges, saveToHistory]
   );
 
   const onConnect = useCallback(

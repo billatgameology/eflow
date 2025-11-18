@@ -6,6 +6,7 @@ export const useUIStore = create((set) => ({
   selectedEdgeId: null,
   isPropertiesPanelOpen: true,
   activeTab: 'equipment',
+  clipboard: null,
 
   // Actions
   selectNode: (id) => set({
@@ -30,4 +31,14 @@ export const useUIStore = create((set) => ({
   })),
 
   setActiveTab: (tab) => set({ activeTab: tab }),
+
+  // Clipboard actions
+  copyToClipboard: (data) => set({ clipboard: data }),
+
+  getClipboard: () => {
+    const state = useUIStore.getState();
+    return state.clipboard;
+  },
+
+  clearClipboard: () => set({ clipboard: null }),
 }));
