@@ -1,0 +1,130 @@
+import { useCallback } from 'react';
+import ReactFlow, {
+  Background,
+  Controls,
+  MiniMap,
+  addEdge,
+} from 'reactflow';
+import 'reactflow/dist/style.css';
+import { useDiagramStore } from '../../stores/useDiagramStore';
+import { useUIStore } from '../../stores/useUIStore';
+
+export default function Canvas({ onInit }) {
+  const { nodes, edges, setNodes, setEdges, addEdge: addEdgeToStore, addNode } = useDiagramStore();
+  const { selectNode, clearSelection } = useUIStore();
+
+  const onNodesChange = useCallback(
+    (changes) => {
+      // Handle node position changes, etc.
+      // For now, we'll implement a simple version
+      changes.forEach((change) => {
+        if (change.type === 'position' && change.position) {
+          const updatedNodes = nodes.map((node) =>
+            node.id === change.id
+              ? { ...node, position: change.position }
+              : node
+          );
+          setNodes(updatedNodes);
+        } else if (change.type === 'remove') {
+          const updatedNodes = nodes.filter((node) => node.id !== change.id);
+          setNodes(updatedNodes);
+        }
+      });
+    },
+    [nodes, setNodes]
+  );
+
+  const onEdgesChange = useCallback(
+    (changes) => {
+      changes.forEach((change) => {
+        if (change.type === 'remove') {
+          const updatedEdges = edges.filter((edge) => edge.id !== change.id);
+          setEdges(updatedEdges);
+        }
+      });
+    },
+    [edges, setEdges]
+  );
+
+  const onConnect = useCallback(
+    (params) => {
+      const newEdge = {
+        ...params,
+        type: 'power',
+        animated: false,
+      };
+      addEdgeToStore(newEdge);
+    },
+    [addEdgeToStore]
+  );
+
+  const onNodeClick = useCallback(
+    (event, node) => selectNode(node.id),
+    [selectNode]
+  );
+
+  const onPaneClick = useCallback(
+    () => clearSelection(),
+    [clearSelection]
+  );
+
+  const onDrop = useCallback(
+    (event) => {
+      event.preventDefault();
+
+      const equipmentData = JSON.parse(
+        event.dataTransfer.getData('application/reactflow')
+      );
+
+      // Get the position on the canvas
+      const reactFlowBounds = event.target.getBoundingClientRect();
+      const position = {
+        x: event.clientX - reactFlowBounds.left - 60,
+        y: event.clientY - reactFlowBounds.top - 40,
+      };
+
+      const newNode = {
+        type: equipmentData.type,
+        position,
+        data: {
+          label: equipmentData.label,
+          equipment: equipmentData,
+          parameters: { ...equipmentData.defaultParameters },
+        },
+      };
+
+      addNode(newNode);
+    },
+    [addNode]
+  );
+
+  const onDragOver = useCallback((event) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  return (
+    <div className="w-full h-full bg-black">
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        onNodeClick={onNodeClick}
+        onPaneClick={onPaneClick}
+        onDrop={onDrop}
+        onDragOver={onDragOver}
+        onInit={onInit}
+        fitView
+      >
+        <Background color="#1a1a1a" gap={16} />
+        <Controls className="bg-gray-900 border border-gray-700" />
+        <MiniMap
+          className="bg-gray-900 border border-gray-700"
+          nodeColor="#4a5568"
+        />
+      </ReactFlow>
+    </div>
+  );
+}

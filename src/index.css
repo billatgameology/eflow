@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+@theme {
+  --color-neon-green: #00FF9F;
+  --color-neon-cyan: #00D9FF;
+  --color-neon-magenta: #FF00FF;
+  --color-neon-red: #FF0055;
+  --color-neon-yellow: #FFFF00;
+  --color-neon-gold: #FFD700;
+
+  --shadow-neon-green: 0 0 10px #00FF9F, 0 0 20px #00FF9F;
+  --shadow-neon-cyan: 0 0 10px #00D9FF, 0 0 20px #00D9FF;
+  --shadow-neon-red: 0 0 10px #FF0055, 0 0 20px #FF0055;
+
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-glow: glow 2s ease-in-out infinite;
+}
+
+@layer base {
+  body {
+    background-color: black;
+    color: rgb(229 231 235);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+}
+
+@layer components {
+  .neon-border {
+    border: 2px solid rgb(156 163 175);
+  }
+
+  .neon-border-active {
+    border: 2px solid var(--color-neon-green);
+    box-shadow: var(--shadow-neon-green);
+  }
+
+  .neon-text {
+    text-shadow: 0 0 10px currentColor;
+  }
+
+  .btn-primary {
+    padding: 0.5rem 1rem;
+    background-color: var(--color-neon-green);
+    color: black;
+    font-weight: 600;
+    border-radius: 0.25rem;
+    transition: colors 200ms;
+  }
+
+  .btn-primary:hover {
+    background-color: var(--color-neon-cyan);
+  }
+
+  .btn-secondary {
+    padding: 0.5rem 1rem;
+    background-color: rgb(31 41 55);
+    color: rgb(229 231 235);
+    border: 1px solid rgb(55 65 81);
+    border-radius: 0.25rem;
+    transition: colors 200ms;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--color-neon-cyan);
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
