@@ -5,8 +5,11 @@ export const useUIStore = create((set) => ({
   selectedNodeId: null,
   selectedEdgeId: null,
   isPropertiesPanelOpen: true,
+  isEquipmentPanelOpen: true,
   activeTab: 'equipment',
   clipboard: null,
+  gridType: 'dots', // ReactFlow variants: 'dots', 'lines', 'cross'
+  snapToGrid: false,
 
   // Actions
   selectNode: (id) => set({
@@ -30,7 +33,15 @@ export const useUIStore = create((set) => ({
     isPropertiesPanelOpen: !state.isPropertiesPanelOpen
   })),
 
+  toggleEquipmentPanel: () => set((state) => ({
+    isEquipmentPanelOpen: !state.isEquipmentPanelOpen
+  })),
+
   setActiveTab: (tab) => set({ activeTab: tab }),
+
+  setGridType: (type) => set({ gridType: type }),
+
+  toggleSnapToGrid: () => set((state) => ({ snapToGrid: !state.snapToGrid })),
 
   // Clipboard actions
   copyToClipboard: (data) => set({ clipboard: data }),

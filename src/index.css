@@ -113,3 +113,19 @@
 .react-flow__edge path:not(.react-flow__edge-path) {
   display: block;
 }
+
+/* Style React Flow Controls buttons */
+.react-flow__controls button {
+  background-color: #1f2937 !important;
+  border-color: #4b5563 !important;
+  color: #d1d5db !important;
+}
+
+.react-flow__controls button:hover {
+  background-color: #374151 !important;
+  border-color: #00D9FF !important;
+}
+
+.react-flow__controls button path {
+  fill: #d1d5db !important;
+}

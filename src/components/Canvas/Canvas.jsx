@@ -5,6 +5,7 @@ import ReactFlow, {
   MiniMap,
   addEdge,
   useReactFlow,
+  BackgroundVariant,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useDiagramStore } from '../../stores/useDiagramStore';
@@ -14,7 +15,7 @@ import { edgeTypes } from '../edges/edgeTypes';
 
 export default function Canvas({ onInit }) {
   const { nodes, edges, setNodes, setEdges, addEdge: addEdgeToStore, addNode, saveToHistory } = useDiagramStore();
-  const { selectNode, clearSelection } = useUIStore();
+  const { selectNode, clearSelection, gridType, snapToGrid } = useUIStore();
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
   const dragStartRef = useRef(false);
 
@@ -155,6 +156,20 @@ export default function Canvas({ onInit }) {
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
+  // Map gridType string to BackgroundVariant enum
+  const getBackgroundVariant = () => {
+    switch (gridType) {
+      case 'dots':
+        return BackgroundVariant.Dots;
+      case 'lines':
+        return BackgroundVariant.Lines;
+      case 'cross':
+        return BackgroundVariant.Cross;
+      default:
+        return BackgroundVariant.Dots;
+    }
+  };
+
   return (
     <div className="w-full h-full bg-black">
       <ReactFlow
@@ -173,9 +188,15 @@ export default function Canvas({ onInit }) {
           setReactFlowInstance(instance);
           if (onInit) onInit(instance);
         }}
+        snapToGrid={snapToGrid}
+        snapGrid={[16, 16]}
         fitView
       >
-        <Background color="#1a1a1a" gap={16} />
+        <Background 
+          color="#4a5568" 
+          gap={16} 
+          variant={getBackgroundVariant()}
+        />
         <Controls className="bg-gray-900 border border-gray-700" />
         <MiniMap
           className="bg-gray-950 border-2 border-gray-700 rounded-lg shadow-lg"

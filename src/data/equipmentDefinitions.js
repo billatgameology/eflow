@@ -11,7 +11,6 @@ export const equipmentDefinitions = {
     type: 'utility',
     label: 'Utility Connection',
     category: EQUIPMENT_CATEGORIES.GENERATION,
-    icon: '⚡',
     color: '#00D9FF',
     defaultParameters: {
       voltage: 13800,
@@ -28,7 +27,6 @@ export const equipmentDefinitions = {
     type: 'generator',
     label: 'Generator',
     category: EQUIPMENT_CATEGORIES.GENERATION,
-    icon: '🔋',
     color: '#FFD700',
     defaultParameters: {
       voltage: 480,
@@ -47,7 +45,6 @@ export const equipmentDefinitions = {
     type: 'ups',
     label: 'UPS',
     category: EQUIPMENT_CATEGORIES.PROTECTION,
-    icon: '🔌',
     color: '#00FF9F',
     defaultParameters: {
       voltage: 480,
@@ -65,7 +62,6 @@ export const equipmentDefinitions = {
     type: 'transformer',
     label: 'Transformer',
     category: EQUIPMENT_CATEGORIES.DISTRIBUTION,
-    icon: '⚙️',
     color: '#E5E7EB',
     defaultParameters: {
       primaryVoltage: 13800,
@@ -83,7 +79,6 @@ export const equipmentDefinitions = {
     type: 'switchgear',
     label: 'Switchgear',
     category: EQUIPMENT_CATEGORIES.DISTRIBUTION,
-    icon: '⬜',
     color: '#E5E7EB',
     defaultParameters: {
       voltage: 480,
@@ -100,7 +95,6 @@ export const equipmentDefinitions = {
     type: 'ats',
     label: 'ATS',
     category: EQUIPMENT_CATEGORIES.PROTECTION,
-    icon: '↔️',
     color: '#E5E7EB',
     defaultParameters: {
       voltage: 480,
@@ -117,7 +111,6 @@ export const equipmentDefinitions = {
     type: 'circuitBreaker',
     label: 'Circuit Breaker',
     category: EQUIPMENT_CATEGORIES.PROTECTION,
-    icon: '🔲',
     color: '#E5E7EB',
     defaultParameters: {
       voltage: 480,
@@ -134,7 +127,6 @@ export const equipmentDefinitions = {
     type: 'pdu',
     label: 'PDU',
     category: EQUIPMENT_CATEGORIES.DISTRIBUTION,
-    icon: '📦',
     color: '#E5E7EB',
     defaultParameters: {
       voltage: 208,
@@ -152,7 +144,6 @@ export const equipmentDefinitions = {
     type: 'server',
     label: 'Server Rack',
     category: EQUIPMENT_CATEGORIES.END_EQUIPMENT,
-    icon: '🖥️',
     color: '#9CA3AF',
     defaultParameters: {
       voltage: 208,

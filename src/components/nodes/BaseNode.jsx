@@ -107,18 +107,6 @@ export default function BaseNode({ id, data, selected }) {
 
       {/* Main Content */}
       <div className="px-5 py-4 flex flex-col items-center gap-2 relative z-10">
-        {/* Equipment Icon */}
-        <div
-          className="text-4xl drop-shadow-lg"
-          style={{
-            filter: powerInfo?.isPowered
-              ? `drop-shadow(0 0 8px ${powerInfo.color})`
-              : 'none',
-          }}
-        >
-          {data.equipment.icon}
-        </div>
-
         {/* Equipment Label */}
         <div className="text-center">
           <span className="text-sm font-bold text-white tracking-wide drop-shadow-md">
@@ -302,9 +290,7 @@ export default function BaseNode({ id, data, selected }) {
               backgroundColor: data.equipment.color,
               boxShadow: `0 0 12px ${data.equipment.color}`,
             }}
-          >
-            <span className="text-xs">⚡</span>
-          </div>
+          />
         </div>
       )}
 
