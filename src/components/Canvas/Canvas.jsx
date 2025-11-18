@@ -8,6 +8,7 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import { useDiagramStore } from '../../stores/useDiagramStore';
 import { useUIStore } from '../../stores/useUIStore';
+import { nodeTypes } from '../nodes/nodeTypes';
 
 export default function Canvas({ onInit }) {
   const { nodes, edges, setNodes, setEdges, addEdge: addEdgeToStore, addNode } = useDiagramStore();
@@ -108,6 +109,7 @@ export default function Canvas({ onInit }) {
       <ReactFlow
         nodes={nodes}
         edges={edges}
+        nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
