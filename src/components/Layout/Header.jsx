@@ -1,17 +1,34 @@
 import { useState } from 'react';
 import { useDiagramStore } from '../../stores/useDiagramStore';
+import { importDiagramFromFile } from '../../utils/persistence';
 import SaveLoadDialog from '../Dialogs/SaveLoadDialog';
 
 export default function Header() {
-  const { saveDiagram, exportDiagram, diagramName } = useDiagramStore();
+  const { exportDiagram, loadDiagram, reset, diagramName } = useDiagramStore();
   const [dialogMode, setDialogMode] = useState(null);
-
-  const handleSave = () => {
-    saveDiagram();
-  };
 
   const handleExport = () => {
     exportDiagram();
+  };
+
+  const handleImport = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      try {
+        const diagram = await importDiagramFromFile(file);
+        loadDiagram(diagram);
+      } catch (error) {
+        alert(error.message || 'Failed to import diagram');
+      }
+    }
+    // Reset file input
+    e.target.value = '';
+  };
+
+  const handleNew = () => {
+    if (confirm('Create a new diagram? Any unsaved changes will be lost.')) {
+      reset();
+    }
   };
 
   return (
@@ -25,36 +42,53 @@ export default function Header() {
             <span className="text-sm text-gray-400">{diagramName}</span>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             <button
-              onClick={handleSave}
-              className="btn-secondary"
+              onClick={handleNew}
+              className="px-3 py-1.5 bg-gray-800 text-gray-200 border border-gray-700 rounded hover:border-neon-yellow transition-colors text-sm font-medium flex items-center gap-1.5"
+              title="Create new diagram (clears canvas)"
             >
-              Save
+              <span>📄</span>
+              <span>New</span>
+            </button>
+            <div className="border-r border-gray-700"></div>
+            <button
+              onClick={() => setDialogMode('save')}
+              className="px-3 py-1.5 bg-gray-800 text-gray-200 border border-gray-700 rounded hover:border-neon-cyan transition-colors text-sm font-medium flex items-center gap-1.5"
+              title="Save diagram to browser storage"
+            >
+              <span>💾</span>
+              <span>Save</span>
             </button>
             <button
               onClick={() => setDialogMode('load')}
-              className="btn-secondary"
+              className="px-3 py-1.5 bg-gray-800 text-gray-200 border border-gray-700 rounded hover:border-neon-cyan transition-colors text-sm font-medium flex items-center gap-1.5"
+              title="Load diagram from browser storage"
             >
-              Load
+              <span>📁</span>
+              <span>Load</span>
             </button>
-            <button
-              onClick={handleExport}
-              className="btn-secondary"
+            <div className="border-r border-gray-700"></div>
+            <label className="px-3 py-1.5 bg-gray-800 text-gray-200 border border-gray-700 rounded hover:border-neon-green transition-colors text-sm font-medium flex items-center gap-1.5 cursor-pointer"
+              title="Import diagram from JSON file"
             >
-              Export
-            </button>
-            <label className="btn-secondary cursor-pointer">
-              Import
+              <span>📥</span>
+              <span>Import</span>
               <input
                 type="file"
                 accept=".json"
-                onChange={(e) => {
-                  // Will be handled in dialog component
-                }}
+                onChange={handleImport}
                 className="hidden"
               />
             </label>
+            <button
+              onClick={handleExport}
+              className="px-3 py-1.5 bg-gray-800 text-gray-200 border border-gray-700 rounded hover:border-neon-green transition-colors text-sm font-medium flex items-center gap-1.5"
+              title="Export diagram to JSON file"
+            >
+              <span>📤</span>
+              <span>Export</span>
+            </button>
           </div>
         </div>
       </header>

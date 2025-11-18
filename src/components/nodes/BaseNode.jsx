@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Handle, Position } from 'reactflow';
 import { useSimulationStore } from '../../stores/useSimulationStore';
 import { useUIStore } from '../../stores/useUIStore';
@@ -6,16 +7,12 @@ import DualPowerIndicator from './DualPowerIndicator';
 
 export default function BaseNode({ id, data, selected }) {
   const { faultedNodes, toggleNodeFault, powerFlowMap } = useSimulationStore();
+  const [isHovered, setIsHovered] = useState(false);
   const isFaulted = faultedNodes.has(id);
   const powerInfo = powerFlowMap.get(id);
 
   // Check if this is a power generation equipment
   const isPowerGeneration = data.equipment.category === EQUIPMENT_CATEGORIES.GENERATION;
-
-  const handleContextMenu = (e) => {
-    e.preventDefault();
-    toggleNodeFault(id);
-  };
 
   // Dynamic border and shadow based on state
   const getBorderStyle = () => {
@@ -35,7 +32,8 @@ export default function BaseNode({ id, data, selected }) {
 
   return (
     <div
-      onContextMenu={handleContextMenu}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       className={`
         relative
         bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900
@@ -146,9 +144,44 @@ export default function BaseNode({ id, data, selected }) {
         </div>
       )}
 
-      {/* Fault Indicator */}
-      {isFaulted && (
-        <div className="absolute -top-2 -right-2 flex items-center justify-center">
+      {/* Fault Toggle Button - shown on hover */}
+      {isHovered && (
+        <button
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Toggling node fault for:', id);
+            toggleNodeFault(id);
+          }}
+          className={`
+            absolute -top-3 -left-3 w-8 h-8 rounded-full flex items-center justify-center
+            border-2 border-black transition-all duration-200 cursor-pointer z-50
+            ${isFaulted
+              ? 'bg-neon-red hover:bg-red-600'
+              : 'bg-gray-600 hover:bg-neon-yellow'
+            }
+          `}
+          style={{
+            boxShadow: isFaulted
+              ? '0 0 12px rgba(255, 0, 85, 0.8)'
+              : '0 0 8px rgba(156, 163, 175, 0.6)',
+            pointerEvents: 'auto',
+          }}
+          title={isFaulted ? 'Click to reconnect' : 'Click to disconnect'}
+        >
+          <span className="text-white text-sm font-bold" style={{ pointerEvents: 'none' }}>
+            {isFaulted ? '✓' : '✕'}
+          </span>
+        </button>
+      )}
+
+      {/* Fault Indicator - permanent when faulted */}
+      {isFaulted && !isHovered && (
+        <div className="absolute -top-2 -left-2 flex items-center justify-center">
           <div className="w-6 h-6 bg-neon-red rounded-full animate-pulse flex items-center justify-center border-2 border-black">
             <span className="text-white text-xs font-bold">!</span>
           </div>

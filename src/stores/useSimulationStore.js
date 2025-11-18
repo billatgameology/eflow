@@ -12,25 +12,37 @@ export const useSimulationStore = create((set, get) => ({
   startSimulation: () => set({ isSimulating: true }),
   stopSimulation: () => set({ isSimulating: false }),
 
-  toggleNodeFault: (nodeId) => set((state) => {
-    const newFaulted = new Set(state.faultedNodes);
-    if (newFaulted.has(nodeId)) {
-      newFaulted.delete(nodeId);
-    } else {
-      newFaulted.add(nodeId);
-    }
-    return { faultedNodes: newFaulted };
-  }),
+  toggleNodeFault: (nodeId) => {
+    console.log('toggleNodeFault called with:', nodeId);
+    set((state) => {
+      const newFaulted = new Set(state.faultedNodes);
+      if (newFaulted.has(nodeId)) {
+        console.log('Removing fault from node:', nodeId);
+        newFaulted.delete(nodeId);
+      } else {
+        console.log('Adding fault to node:', nodeId);
+        newFaulted.add(nodeId);
+      }
+      console.log('New faulted nodes:', Array.from(newFaulted));
+      return { faultedNodes: newFaulted };
+    });
+  },
 
-  toggleEdgeFault: (edgeId) => set((state) => {
-    const newFaulted = new Set(state.faultedEdges);
-    if (newFaulted.has(edgeId)) {
-      newFaulted.delete(edgeId);
-    } else {
-      newFaulted.add(edgeId);
-    }
-    return { faultedEdges: newFaulted };
-  }),
+  toggleEdgeFault: (edgeId) => {
+    console.log('toggleEdgeFault called with:', edgeId);
+    set((state) => {
+      const newFaulted = new Set(state.faultedEdges);
+      if (newFaulted.has(edgeId)) {
+        console.log('Removing fault from edge:', edgeId);
+        newFaulted.delete(edgeId);
+      } else {
+        console.log('Adding fault to edge:', edgeId);
+        newFaulted.add(edgeId);
+      }
+      console.log('New faulted edges:', Array.from(newFaulted));
+      return { faultedEdges: newFaulted };
+    });
+  },
 
   setPowerFlowMap: (map) => set({ powerFlowMap: map }),
 

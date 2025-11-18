@@ -10,6 +10,7 @@ import 'reactflow/dist/style.css';
 import { useDiagramStore } from '../../stores/useDiagramStore';
 import { useUIStore } from '../../stores/useUIStore';
 import { nodeTypes } from '../nodes/nodeTypes';
+import { edgeTypes } from '../edges/edgeTypes';
 
 export default function Canvas({ onInit }) {
   const { nodes, edges, setNodes, setEdges, addEdge: addEdgeToStore, addNode } = useDiagramStore();
@@ -113,6 +114,7 @@ export default function Canvas({ onInit }) {
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
@@ -129,8 +131,20 @@ export default function Canvas({ onInit }) {
         <Background color="#1a1a1a" gap={16} />
         <Controls className="bg-gray-900 border border-gray-700" />
         <MiniMap
-          className="bg-gray-900 border border-gray-700"
-          nodeColor="#4a5568"
+          className="bg-gray-950 border-2 border-gray-700 rounded-lg shadow-lg"
+          nodeColor={(node) => {
+            // Use equipment color for powered nodes, gray for unpowered
+            if (node.data?.equipment?.color) {
+              return node.data.equipment.color;
+            }
+            return '#4a5568';
+          }}
+          nodeStrokeColor="#00D9FF"
+          nodeStrokeWidth={2}
+          maskColor="rgba(0, 0, 0, 0.8)"
+          style={{
+            backgroundColor: '#0a0a0a',
+          }}
         />
       </ReactFlow>
     </div>

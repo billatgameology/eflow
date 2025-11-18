@@ -61,9 +61,16 @@ export function importDiagramFromFile(file) {
     reader.onload = (e) => {
       try {
         const diagram = JSON.parse(e.target.result);
+
+        // Validate diagram structure
+        if (!diagram.id || !diagram.name || !diagram.nodes || !diagram.edges) {
+          reject(new Error('Invalid diagram file structure'));
+          return;
+        }
+
         resolve(diagram);
       } catch (error) {
-        reject(new Error('Invalid diagram file'));
+        reject(new Error('Invalid JSON file'));
       }
     };
 
@@ -87,5 +94,15 @@ export function loadAutoSave() {
     return data ? JSON.parse(data) : null;
   } catch (error) {
     return null;
+  }
+}
+
+export function clearAutoSave() {
+  try {
+    localStorage.removeItem(AUTOSAVE_KEY);
+    return true;
+  } catch (error) {
+    console.error('Failed to clear auto-save:', error);
+    return false;
   }
 }

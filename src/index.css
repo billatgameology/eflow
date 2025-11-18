@@ -73,3 +73,13 @@
     opacity: 0.5;
   }
 }
+
+/* Hide React Flow's default edge paths */
+.react-flow__edge-path {
+  display: none;
+}
+
+/* Ensure our custom edge paths are visible */
+.react-flow__edge path:not(.react-flow__edge-path) {
+  display: block;
+}
