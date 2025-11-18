@@ -205,16 +205,124 @@ export default function NodeProperties({ node }) {
           Connection Ports
         </h3>
         <div className="grid grid-cols-2 gap-3">
+          {/* Input Ports */}
           <div className="bg-gray-800 rounded-lg p-3 border border-gray-700">
             <div className="text-xs text-gray-500 mb-1">Input Ports</div>
-            <div className="text-2xl font-bold text-neon-cyan">
-              {node.data.equipment.ports.input}
-            </div>
+            {node.data.equipment.category === EQUIPMENT_CATEGORIES.GENERATION ? (
+              <div className="flex flex-col items-center justify-center py-2">
+                <div className="text-2xl font-bold text-gray-600">
+                  {node.data.equipment.ports.input}
+                </div>
+                <div className="text-xs text-gray-600 mt-1">
+                  N/A for generators
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between gap-2">
+                <button
+                  onClick={() => {
+                    const currentPorts = node.data.equipment.ports.input;
+                    if (currentPorts > 0) {
+                      updateNode(node.id, {
+                        data: {
+                          ...node.data,
+                          equipment: {
+                            ...node.data.equipment,
+                            ports: {
+                              ...node.data.equipment.ports,
+                              input: currentPorts - 1,
+                            },
+                          },
+                        },
+                      });
+                    }
+                  }}
+                  className="w-8 h-8 flex items-center justify-center bg-gray-700 hover:bg-gray-600 rounded-lg border border-gray-600 text-white font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                  disabled={node.data.equipment.ports.input === 0}
+                  title="Decrease input ports"
+                >
+                  −
+                </button>
+                <div className="text-2xl font-bold text-neon-cyan">
+                  {node.data.equipment.ports.input}
+                </div>
+                <button
+                  onClick={() => {
+                    const currentPorts = node.data.equipment.ports.input;
+                    updateNode(node.id, {
+                      data: {
+                        ...node.data,
+                        equipment: {
+                          ...node.data.equipment,
+                          ports: {
+                            ...node.data.equipment.ports,
+                            input: currentPorts + 1,
+                          },
+                        },
+                      },
+                    });
+                  }}
+                  className="w-8 h-8 flex items-center justify-center bg-gray-700 hover:bg-gray-600 rounded-lg border border-gray-600 text-white font-bold transition-all"
+                  title="Increase input ports"
+                >
+                  +
+                </button>
+              </div>
+            )}
           </div>
+
+          {/* Output Ports */}
           <div className="bg-gray-800 rounded-lg p-3 border border-gray-700">
             <div className="text-xs text-gray-500 mb-1">Output Ports</div>
-            <div className="text-2xl font-bold text-neon-green">
-              {node.data.equipment.ports.output}
+            <div className="flex items-center justify-between gap-2">
+              <button
+                onClick={() => {
+                  const currentPorts = node.data.equipment.ports.output;
+                  if (currentPorts > 0) {
+                    updateNode(node.id, {
+                      data: {
+                        ...node.data,
+                        equipment: {
+                          ...node.data.equipment,
+                          ports: {
+                            ...node.data.equipment.ports,
+                            output: currentPorts - 1,
+                          },
+                        },
+                      },
+                    });
+                  }
+                }}
+                className="w-8 h-8 flex items-center justify-center bg-gray-700 hover:bg-gray-600 rounded-lg border border-gray-600 text-white font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                disabled={node.data.equipment.ports.output === 0}
+                title="Decrease output ports"
+              >
+                −
+              </button>
+              <div className="text-2xl font-bold text-neon-green">
+                {node.data.equipment.ports.output}
+              </div>
+              <button
+                onClick={() => {
+                  const currentPorts = node.data.equipment.ports.output;
+                  updateNode(node.id, {
+                    data: {
+                      ...node.data,
+                      equipment: {
+                        ...node.data.equipment,
+                        ports: {
+                          ...node.data.equipment.ports,
+                          output: currentPorts + 1,
+                        },
+                      },
+                    },
+                  });
+                }}
+                className="w-8 h-8 flex items-center justify-center bg-gray-700 hover:bg-gray-600 rounded-lg border border-gray-600 text-white font-bold transition-all"
+                title="Increase output ports"
+              >
+                +
+              </button>
             </div>
           </div>
         </div>

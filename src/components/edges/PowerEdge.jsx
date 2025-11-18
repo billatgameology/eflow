@@ -34,17 +34,20 @@ export default function PowerEdge({
   });
 
   // Determine edge color based on power flow
-  // Check if the target node is powered and get its power source color
+  // Get the source node's power info to determine the edge color
+  const sourcePowerInfo = source ? powerFlowMap.get(source) : null;
   const targetPowerInfo = target ? powerFlowMap.get(target) : null;
-  const isPowered = targetPowerInfo?.isPowered && !isFaulted;
+  
+  // Edge is powered if source is powered and edge is not faulted
+  const isPowered = sourcePowerInfo?.isPowered && !isFaulted;
 
-  // Use the power source color if available, otherwise default colors
+  // Use the power source color from the source node
   let edgeColor = '#4A5568'; // Default gray
 
   if (isFaulted) {
     edgeColor = '#FF0055';
-  } else if (isPowered && targetPowerInfo?.sources?.length > 0) {
-    edgeColor = targetPowerInfo.sources[0].color;
+  } else if (isPowered && sourcePowerInfo?.sources?.length > 0) {
+    edgeColor = sourcePowerInfo.sources[0].color;
   }
 
   const strokeWidth = isFaulted ? 3 : isPowered ? 2.5 : 1.5;
@@ -53,7 +56,6 @@ export default function PowerEdge({
     <g onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
       <path
         id={id}
-        className={isPowered && !isFaulted ? 'animate-pulse-slow' : ''}
         style={{
           stroke: edgeColor,
           strokeWidth,

@@ -26,7 +26,7 @@ export default function BaseNode({ id, data, selected }) {
       return 'border-neon-red shadow-neon-red';
     }
     if (selected) {
-      return 'border-neon-green shadow-neon-green';
+      return ''; // Will be handled by inline style
     }
     if (powerInfo?.isPowered) {
       return `border-[${powerInfo.color}]`;
@@ -34,7 +34,26 @@ export default function BaseNode({ id, data, selected }) {
     return 'border-gray-600';
   };
 
-  const glowAnimation = selected ? 'animate-pulse-slow' : '';
+  // Get hover color based on power source
+  const getHoverColor = () => {
+    if (isPowerGeneration) {
+      return data.equipment.color;
+    }
+    if (powerInfo?.isPowered && powerInfo.color) {
+      return powerInfo.color;
+    }
+    return '#00D9FF'; // Default cyan
+  };
+
+  const hoverColor = getHoverColor();
+
+  // Convert hex to rgba
+  const hexToRgba = (hex, alpha = 1) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
 
   const handleCopy = (e) => {
     e.preventDefault();
@@ -65,16 +84,20 @@ export default function BaseNode({ id, data, selected }) {
         bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900
         border-2 rounded-xl
         min-w-[160px] min-h-[100px]
-        ${getBorderStyle()} ${glowAnimation}
+        ${getBorderStyle()}
         transition-all duration-300 ease-in-out
-        hover:border-neon-cyan hover:shadow-neon-cyan
         backdrop-blur-sm
       `}
       style={{
-        boxShadow: selected
-          ? '0 0 20px rgba(0, 255, 159, 0.5), 0 0 40px rgba(0, 255, 159, 0.3)'
-          : isFaulted
+        borderColor: selected 
+          ? hoverColor 
+          : isHovered && !isFaulted 
+          ? hoverColor 
+          : undefined,
+        boxShadow: isFaulted
           ? '0 0 20px rgba(255, 0, 85, 0.5), 0 0 40px rgba(255, 0, 85, 0.3)'
+          : (selected || isHovered)
+          ? `0 0 20px ${hexToRgba(hoverColor, 0.5)}, 0 0 40px ${hexToRgba(hoverColor, 0.3)}`
           : '0 4px 6px rgba(0, 0, 0, 0.3)',
       }}
     >
