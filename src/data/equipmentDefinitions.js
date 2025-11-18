@@ -46,7 +46,7 @@ export const equipmentDefinitions = {
   ups: {
     type: 'ups',
     label: 'UPS',
-    category: EQUIPMENT_CATEGORIES.GENERATION,
+    category: EQUIPMENT_CATEGORIES.PROTECTION,
     icon: '🔌',
     color: '#00FF9F',
     defaultParameters: {

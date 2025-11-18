@@ -2,6 +2,7 @@ import { Handle, Position } from 'reactflow';
 import { useSimulationStore } from '../../stores/useSimulationStore';
 import { useUIStore } from '../../stores/useUIStore';
 import { EQUIPMENT_CATEGORIES } from '../../data/equipmentDefinitions';
+import DualPowerIndicator from './DualPowerIndicator';
 
 export default function BaseNode({ id, data, selected }) {
   const { faultedNodes, toggleNodeFault, powerFlowMap } = useSimulationStore();
@@ -123,17 +124,23 @@ export default function BaseNode({ id, data, selected }) {
         )}
       </div>
 
-      {/* Dual Power Source Indicator */}
+      {/* Dual Power Source Indicator - for equipment with 2 inputs receiving power from 2 sources */}
       {data.equipment.ports.input === 2 && powerInfo?.sources?.length === 2 && (
-        <div className="absolute top-1 right-1 flex gap-1">
+        <DualPowerIndicator sources={powerInfo.sources} />
+      )}
+
+      {/* Power Source Indicator Box (top-right) - for non-power generation equipment */}
+      {!isPowerGeneration && powerInfo?.isPowered && powerInfo?.sources?.length > 0 && (
+        <div className="absolute -top-1 -right-1 flex gap-0.5">
           {powerInfo.sources.map((source, idx) => (
             <div
               key={idx}
-              className="w-2 h-2 rounded-full animate-pulse"
+              className="w-4 h-4 rounded border-2 border-black"
               style={{
                 backgroundColor: source.color,
-                boxShadow: `0 0 6px ${source.color}`,
+                boxShadow: `0 0 8px ${source.color}`,
               }}
+              title={`Powered by: ${source.label}`}
             />
           ))}
         </div>

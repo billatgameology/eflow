@@ -1,9 +1,10 @@
-import { useCallback } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import ReactFlow, {
   Background,
   Controls,
   MiniMap,
   addEdge,
+  useReactFlow,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useDiagramStore } from '../../stores/useDiagramStore';
@@ -13,6 +14,7 @@ import { nodeTypes } from '../nodes/nodeTypes';
 export default function Canvas({ onInit }) {
   const { nodes, edges, setNodes, setEdges, addEdge: addEdgeToStore, addNode } = useDiagramStore();
   const { selectNode, clearSelection } = useUIStore();
+  const [reactFlowInstance, setReactFlowInstance] = useState(null);
 
   const onNodesChange = useCallback(
     (changes) => {
@@ -73,16 +75,17 @@ export default function Canvas({ onInit }) {
     (event) => {
       event.preventDefault();
 
+      if (!reactFlowInstance) return;
+
       const equipmentData = JSON.parse(
         event.dataTransfer.getData('application/reactflow')
       );
 
-      // Get the position on the canvas
-      const reactFlowBounds = event.target.getBoundingClientRect();
-      const position = {
-        x: event.clientX - reactFlowBounds.left - 60,
-        y: event.clientY - reactFlowBounds.top - 40,
-      };
+      // Use React Flow's coordinate transformation for accurate positioning
+      const position = reactFlowInstance.screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
 
       const newNode = {
         type: equipmentData.type,
@@ -96,7 +99,7 @@ export default function Canvas({ onInit }) {
 
       addNode(newNode);
     },
-    [addNode]
+    [reactFlowInstance, addNode]
   );
 
   const onDragOver = useCallback((event) => {
@@ -117,7 +120,10 @@ export default function Canvas({ onInit }) {
         onPaneClick={onPaneClick}
         onDrop={onDrop}
         onDragOver={onDragOver}
-        onInit={onInit}
+        onInit={(instance) => {
+          setReactFlowInstance(instance);
+          if (onInit) onInit(instance);
+        }}
         fitView
       >
         <Background color="#1a1a1a" gap={16} />
