@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import BaseNodeWrapper from './BaseNodeWrapper';
 import { cloneLoadProfile } from '../../utils/loadProfile';
+import { useSimulationStore } from '../../stores/useSimulationStore';
 
 const MINI_CHART_WIDTH = 120;
 const MINI_CHART_HEIGHT = 46;
@@ -39,6 +40,42 @@ const getProfileStats = (points = []) => {
   return { average, peak };
 };
 
+const getValueAtHour = (points = [], hour = 0) => {
+  if (!points.length) return null;
+  const sorted = [...points].sort((a, b) => a.hour - b.hour);
+
+  for (let i = 0; i < sorted.length - 1; i += 1) {
+    const current = sorted[i];
+    const next = sorted[i + 1];
+
+    if (hour === current.hour) {
+      return current.percentage;
+    }
+
+    if (hour > current.hour && hour < next.hour) {
+      const ratio = (hour - current.hour) / (next.hour - current.hour || 1);
+      return (
+        current.percentage + ratio * (next.percentage - current.percentage)
+      );
+    }
+  }
+
+  return sorted[sorted.length - 1]?.percentage ?? null;
+};
+
+const hourToMiniX = (hour) => {
+  const chartWidth = MINI_CHART_WIDTH - MINI_CHART_PADDING * 2;
+  return MINI_CHART_PADDING + (hour / HOURS_MAX) * chartWidth;
+};
+
+const percentageToMiniY = (percentage) => {
+  const chartHeight = MINI_CHART_HEIGHT - MINI_CHART_PADDING * 2;
+  return (
+    MINI_CHART_PADDING +
+    ((100 - percentage) / 100) * chartHeight
+  );
+};
+
 export default function ServerNode(props) {
   const racksInRow = Math.min(
     Math.max(props.data?.parameters?.racksInRow || 1, 1),
@@ -57,6 +94,16 @@ export default function ServerNode(props) {
 
   const miniChartPoints = formatMiniChartPoints(sortedPoints);
   const profileStats = getProfileStats(sortedPoints);
+  const { isSimulating, simulationHour } = useSimulationStore();
+  const simulationValue = useMemo(
+    () => getValueAtHour(sortedPoints, simulationHour),
+    [sortedPoints, simulationHour]
+  );
+  const simulationX = isSimulating ? hourToMiniX(simulationHour) : null;
+  const simulationY =
+    isSimulating && simulationValue !== null
+      ? percentageToMiniY(simulationValue)
+      : null;
   // Each rack unit - compact spacing
   const rackUnitHeight = 4; // Height per rack in viewBox units
   const totalHeight = racksInRow * rackUnitHeight;
@@ -132,7 +179,37 @@ export default function ServerNode(props) {
                   strokeLinejoin="round"
                 />
               )}
+
+              {/* Simulation indicator */}
+              {isSimulating && simulationX !== null && (
+                <>
+                  <line
+                    x1={simulationX}
+                    y1={MINI_CHART_PADDING}
+                    x2={simulationX}
+                    y2={MINI_CHART_HEIGHT - MINI_CHART_PADDING}
+                    stroke="#FFD700"
+                    strokeWidth="1.5"
+                    strokeDasharray="4 3"
+                  />
+                  {simulationY !== null && (
+                    <circle
+                      cx={simulationX}
+                      cy={simulationY}
+                      r={4}
+                      fill="#FFD700"
+                      stroke="#111827"
+                      strokeWidth="1.5"
+                    />
+                  )}
+                </>
+              )}
             </svg>
+            {isSimulating && simulationValue !== null && (
+              <div className="text-[10px] font-mono text-[#FFD700] text-center mt-1">
+                Sim {simulationHour.toString().padStart(2, '0')}h • {simulationValue.toFixed(0)}%
+              </div>
+            )}
             <div className="flex items-center justify-between text-[10px] text-gray-400 font-mono mt-1">
               <span>Avg {profileStats.average}%</span>
               <span>Peak {profileStats.peak}%</span>

@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
+import { useSimulationStore } from '../../stores/useSimulationStore';
 
 const SVG_WIDTH = 400;
 const SVG_HEIGHT = 250;
@@ -35,6 +36,29 @@ const hourToX = (hour) =>
 const percentageToY = (percentage) =>
   PADDING + ((100 - clamp(percentage, 0, 100)) / 100) * (SVG_HEIGHT - PADDING * 2);
 
+const getValueAtHour = (points, hour) => {
+  if (!points.length && hour === undefined) return null;
+  const sorted = [...points].sort((a, b) => a.hour - b.hour);
+
+  for (let i = 0; i < sorted.length - 1; i += 1) {
+    const current = sorted[i];
+    const next = sorted[i + 1];
+
+    if (hour === current.hour) {
+      return current.percentage;
+    }
+
+    if (hour > current.hour && hour < next.hour) {
+      const ratio = (hour - current.hour) / (next.hour - current.hour || 1);
+      const interpolated =
+        current.percentage + ratio * (next.percentage - current.percentage);
+      return round(interpolated, 1);
+    }
+  }
+
+  return sorted[sorted.length - 1]?.percentage ?? null;
+};
+
 export default function LoadProfileEditor({
   points = [],
   onPointsChange,
@@ -44,6 +68,7 @@ export default function LoadProfileEditor({
   const [hoverPosition, setHoverPosition] = useState(null);
   const [selectedSignature, setSelectedSignature] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+  const { simulationHour, isSimulating } = useSimulationStore();
 
   const normalizedPoints = useMemo(
     () => normalizePoints(points),
@@ -217,16 +242,40 @@ export default function LoadProfileEditor({
 
   const hoverX = hoverPosition ? hourToX(hoverPosition.hour) : null;
   const hoverY = hoverPosition ? percentageToY(hoverPosition.percentage) : null;
+  const simulationValue = useMemo(
+    () => getValueAtHour(normalizedPoints, simulationHour),
+    [normalizedPoints, simulationHour]
+  );
+  const simulationX = isSimulating ? hourToX(simulationHour) : null;
+  const simulationY =
+    isSimulating && simulationValue !== null
+      ? percentageToY(simulationValue)
+      : null;
 
   return (
     <div className="space-y-4">
       <div className="relative rounded-xl border border-gray-700 bg-gray-900/70 p-4">
         <div className="relative">
-              {hoverPosition && (
-                <div className="absolute top-0 right-0 z-10 text-xs font-mono text-gray-200 bg-gray-900/80 px-3 py-1 rounded-bl-lg border border-gray-700">
-                  <span>Hour {hoverPosition.hour.toFixed(2)}h</span>
-                  <span className="mx-2 text-gray-500">•</span>
-                  <span>{hoverPosition.percentage.toFixed(1)}%</span>
+              {(hoverPosition || isSimulating) && (
+                <div className="absolute top-0 right-0 z-10 text-xs font-mono text-gray-200 bg-gray-900/80 px-3 py-1 rounded-bl-lg border border-gray-700 space-y-0.5 text-right">
+                  {hoverPosition && (
+                    <div>
+                      <span>Hover {hoverPosition.hour.toFixed(2)}h</span>
+                      <span className="mx-2 text-gray-500">•</span>
+                      <span>{hoverPosition.percentage.toFixed(1)}%</span>
+                    </div>
+                  )}
+                  {isSimulating && (
+                    <div className="text-neon-cyan">
+                      <span>Sim {simulationHour.toString().padStart(2, '0')}h</span>
+                      {simulationValue !== null && (
+                        <>
+                          <span className="mx-2 text-gray-500">•</span>
+                          <span>{simulationValue.toFixed(1)}%</span>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -347,11 +396,11 @@ export default function LoadProfileEditor({
                   );
                 })}
 
-                {/* Crosshair */}
-                {hoverX !== null && hoverY !== null && (
-                  <>
-                    <line
-                      x1={hoverX}
+            {/* Crosshair */}
+            {hoverX !== null && hoverY !== null && (
+              <>
+                <line
+                  x1={hoverX}
                       y1={PADDING}
                       x2={hoverX}
                       y2={SVG_HEIGHT - PADDING}
@@ -367,9 +416,44 @@ export default function LoadProfileEditor({
                       stroke="#6B7280"
                       strokeWidth={1}
                       strokeDasharray="4 4"
+                />
+              </>
+            )}
+
+            {/* Simulation timeline */}
+            {isSimulating && simulationX !== null && (
+              <>
+                <line
+                  x1={simulationX}
+                  y1={PADDING}
+                  x2={simulationX}
+                  y2={SVG_HEIGHT - PADDING}
+                  stroke="#FFD700"
+                  strokeWidth={2}
+                  strokeDasharray="6 4"
+                />
+                {simulationY !== null && (
+                  <>
+                    <circle
+                      cx={simulationX}
+                      cy={simulationY}
+                      r={5}
+                      fill="#FFD700"
+                      stroke="#111827"
+                      strokeWidth={2}
                     />
+                    <text
+                      x={simulationX + 8}
+                      y={simulationY - 8}
+                      className="text-[10px] font-mono"
+                      fill="#FFD700"
+                    >
+                      {simulationValue?.toFixed(1)}%
+                    </text>
                   </>
                 )}
+              </>
+            )}
 
                 {/* Hour labels */}
                 {hourTicks.map((tick) => {

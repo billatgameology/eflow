@@ -1,9 +1,16 @@
 import { useUIStore } from '../../stores/useUIStore';
 import { useDiagramStore } from '../../stores/useDiagramStore';
+import { useSimulationStore } from '../../stores/useSimulationStore';
 
 export default function Toolbar({ reactFlowInstance }) {
   const { gridType, setGridType, snapToGrid, toggleSnapToGrid } = useUIStore();
   const { nodes, setNodes, saveToHistory } = useDiagramStore();
+  const {
+    isSimulating,
+    simulationHour,
+    startSimulation,
+    pauseSimulation,
+  } = useSimulationStore();
 
   const handleFitView = () => {
     if (reactFlowInstance) {
@@ -99,6 +106,38 @@ export default function Toolbar({ reactFlowInstance }) {
             </svg>
             <span>Snap to Grid</span>
           </button>
+
+          <div className="flex items-center gap-1 bg-gray-800 border border-gray-700 rounded-full px-2 py-1">
+            <button
+              type="button"
+              onClick={startSimulation}
+              disabled={isSimulating}
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition ${
+                isSimulating
+                  ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                  : 'bg-neon-green/80 text-black hover:bg-neon-green'
+              }`}
+              title="Start Simulation"
+            >
+              ▶
+            </button>
+            <button
+              type="button"
+              onClick={pauseSimulation}
+              disabled={!isSimulating}
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition ${
+                !isSimulating
+                  ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                  : 'bg-gray-200 text-gray-900 hover:bg-white'
+              }`}
+              title="Pause Simulation"
+            >
+              ■
+            </button>
+            <div className="px-2 text-xs font-mono text-gray-300">
+              {simulationHour.toString().padStart(2, '0')}:00
+            </div>
+          </div>
         </div>
 
         <div className="text-sm text-gray-300 flex items-center gap-2">
