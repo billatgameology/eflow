@@ -10,12 +10,14 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import { useDiagramStore } from '../../stores/useDiagramStore';
 import { useUIStore } from '../../stores/useUIStore';
+import { useSimulationStore } from '../../stores/useSimulationStore';
 import { nodeTypes } from '../nodes/nodeTypes';
 import { edgeTypes } from '../edges/edgeTypes';
 
 export default function Canvas({ onInit }) {
   const { nodes, edges, setNodes, setEdges, addEdge: addEdgeToStore, addNode, saveToHistory } = useDiagramStore();
   const { selectNode, selectEdge, clearSelection, gridType, snapToGrid } = useUIStore();
+  const { powerFlowMap } = useSimulationStore();
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
   const dragStartRef = useRef(false);
 
@@ -217,13 +219,23 @@ export default function Canvas({ onInit }) {
         <MiniMap
           className="bg-gray-950 border-2 border-gray-700 rounded-lg shadow-lg"
           nodeColor={(node) => {
-            // Use equipment color for powered nodes, gray for unpowered
-            if (node.data?.equipment?.color) {
-              return node.data.equipment.color;
+            const powerInfo = powerFlowMap.get(node.id);
+
+            // If powered, use the source color
+            if (powerInfo?.isPowered && powerInfo.color) {
+              return Array.isArray(powerInfo.color) ? powerInfo.color[0] : powerInfo.color;
+            }
+
+            // Default gray for unpowered or disconnected
+            return '#4a5568';
+          }}
+          nodeStrokeColor={(node) => {
+            const powerInfo = powerFlowMap.get(node.id);
+            if (powerInfo?.isPowered && powerInfo.color) {
+              return Array.isArray(powerInfo.color) ? powerInfo.color[0] : powerInfo.color;
             }
             return '#4a5568';
           }}
-          nodeStrokeColor="#00D9FF"
           nodeStrokeWidth={2}
           maskColor="rgba(0, 0, 0, 0.8)"
           style={{
