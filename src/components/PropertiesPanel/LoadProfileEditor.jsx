@@ -84,8 +84,17 @@ export default function LoadProfileEditor({
     const chartWidth = SVG_WIDTH - PADDING * 2;
     const chartHeight = SVG_HEIGHT - PADDING * 2;
 
-    const rawX = event.clientX - rect.left - PADDING;
-    const rawY = event.clientY - rect.top - PADDING;
+    const relativeX = clamp(event.clientX - rect.left, 0, rect.width);
+    const relativeY = clamp(event.clientY - rect.top, 0, rect.height);
+
+    const scaleX = SVG_WIDTH / rect.width;
+    const scaleY = SVG_HEIGHT / rect.height;
+
+    const svgX = relativeX * scaleX;
+    const svgY = relativeY * scaleY;
+
+    const rawX = svgX - PADDING;
+    const rawY = svgY - PADDING;
 
     const x = clamp(rawX, 0, chartWidth);
     const y = clamp(rawY, 0, chartHeight);
@@ -212,9 +221,7 @@ export default function LoadProfileEditor({
   return (
     <div className="space-y-4">
       <div className="relative rounded-xl border border-gray-700 bg-gray-900/70 p-4">
-        <div className="overflow-x-auto">
-          <div className="min-w-[400px]">
-            <div className="relative">
+        <div className="relative">
               {hoverPosition && (
                 <div className="absolute top-0 right-0 z-10 text-xs font-mono text-gray-200 bg-gray-900/80 px-3 py-1 rounded-bl-lg border border-gray-700">
                   <span>Hour {hoverPosition.hour.toFixed(2)}h</span>
@@ -225,7 +232,8 @@ export default function LoadProfileEditor({
 
               <svg
                 ref={svgRef}
-                width={SVG_WIDTH}
+                viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
+                width="100%"
                 height={SVG_HEIGHT}
                 className={`select-none ${disabled ? 'opacity-60' : ''}`}
                 onClick={handleSvgClick}
@@ -405,8 +413,6 @@ export default function LoadProfileEditor({
                 </div>
               )}
             </div>
-          </div>
-        </div>
       </div>
 
       <div className="flex flex-wrap items-end gap-4">

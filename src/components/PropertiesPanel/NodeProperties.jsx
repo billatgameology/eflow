@@ -1,8 +1,24 @@
+import { useEffect, useMemo, useState } from 'react';
 import { useDiagramStore } from '../../stores/useDiagramStore';
 import { EQUIPMENT_CATEGORIES } from '../../data/equipmentDefinitions';
+import LoadProfileEditor from './LoadProfileEditor';
+import { createDefaultLoadProfile } from '../../utils/loadProfile';
+import { loadProfileTemplates } from '../../utils/loadProfileTemplates';
 
 export default function NodeProperties({ node }) {
   const { updateNode } = useDiagramStore();
+  const [isLoadProfileCollapsed, setIsLoadProfileCollapsed] = useState(false);
+  const isEndEquipment =
+    node.data.equipment.category === EQUIPMENT_CATEGORIES.END_EQUIPMENT;
+
+  const loadProfile = useMemo(
+    () => node.data.loadProfile ?? createDefaultLoadProfile(),
+    [node.data.loadProfile]
+  );
+
+  useEffect(() => {
+    setIsLoadProfileCollapsed(false);
+  }, [node.id]);
 
   const handleLabelChange = (e) => {
     updateNode(node.id, {
@@ -29,6 +45,35 @@ export default function NodeProperties({ node }) {
         equipment: {
           ...node.data.equipment,
           color: color,
+        },
+      },
+    });
+  };
+
+  const handleLoadProfilePointsChange = (points) => {
+    updateNode(node.id, {
+      data: {
+        ...node.data,
+        loadProfile: {
+          ...loadProfile,
+          points,
+          enabled: true,
+        },
+      },
+    });
+  };
+
+  const handleTemplateApply = (templateId) => {
+    const template = loadProfileTemplates.find((entry) => entry.id === templateId);
+    if (!template) return;
+
+    const templatePoints = template.getPoints();
+    updateNode(node.id, {
+      data: {
+        ...node.data,
+        loadProfile: {
+          enabled: true,
+          points: templatePoints,
         },
       },
     });
@@ -75,6 +120,68 @@ export default function NodeProperties({ node }) {
           </div>
         </div>
       </div>
+
+      {/* Load Profile Section */}
+      {isEndEquipment && (
+        <div className="border-t border-gray-700 pt-4">
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setIsLoadProfileCollapsed((prev) => !prev)}
+              className="flex items-center gap-2 text-sm font-semibold text-gray-200 uppercase tracking-wide"
+            >
+              <span className="text-lg leading-none">
+                {isLoadProfileCollapsed ? '▸' : '▾'}
+              </span>
+              Load Profile
+            </button>
+            <span className="text-[10px] font-mono text-gray-500">
+              Always enabled · 24h horizon
+            </span>
+          </div>
+
+          {!isLoadProfileCollapsed && (
+            <div className="mt-4 space-y-3">
+              <div>
+                <div className="text-[11px] uppercase tracking-wide text-gray-500 mb-2">
+                  Quick Templates
+                </div>
+                <div className="space-y-2">
+                  {loadProfileTemplates.map((template) => (
+                    <button
+                      key={template.id}
+                      type="button"
+                      onClick={() => handleTemplateApply(template.id)}
+                      className="w-full text-left px-3 py-2 rounded-lg border border-gray-700 bg-gray-900/70 hover:border-neon-cyan transition"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold text-white">
+                          {template.name}
+                        </span>
+                        <span className="text-[10px] text-gray-400 uppercase tracking-wide">
+                          Apply
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {template.description}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <LoadProfileEditor
+                points={loadProfile.points}
+                onPointsChange={handleLoadProfilePointsChange}
+              />
+              <p className="text-xs text-gray-500">
+                Click or drag on the chart to shape hourly utilization. Endpoints
+                at 00:00 and 23:00 remain locked for continuity.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Label Input */}
       <div>
