@@ -1,12 +1,50 @@
 import { useUIStore } from '../../stores/useUIStore';
+import { useDiagramStore } from '../../stores/useDiagramStore';
 
 export default function Toolbar({ reactFlowInstance }) {
   const { gridType, setGridType, snapToGrid, toggleSnapToGrid } = useUIStore();
+  const { nodes, setNodes, saveToHistory } = useDiagramStore();
 
   const handleFitView = () => {
     if (reactFlowInstance) {
       reactFlowInstance.fitView({ duration: 600, padding: 0.2 });
     }
+  };
+
+  const getSelectedNodes = () => nodes.filter((n) => n.selected);
+
+  const handleAlignTop = () => {
+    const selected = getSelectedNodes();
+    if (selected.length < 2) return;
+
+    const minY = Math.min(...selected.map((n) => n.position.y));
+
+    saveToHistory();
+    setNodes(
+      nodes.map((n) => {
+        if (n.selected) {
+          return { ...n, position: { ...n.position, y: minY } };
+        }
+        return n;
+      })
+    );
+  };
+
+  const handleAlignBottom = () => {
+    const selected = getSelectedNodes();
+    if (selected.length < 2) return;
+
+    const maxBottom = Math.max(...selected.map((n) => n.position.y + (n.height || 0)));
+
+    saveToHistory();
+    setNodes(
+      nodes.map((n) => {
+        if (n.selected) {
+          return { ...n, position: { ...n.position, y: maxBottom - (n.height || 0) } };
+        }
+        return n;
+      })
+    );
   };
 
   return (
@@ -21,6 +59,8 @@ export default function Toolbar({ reactFlowInstance }) {
             <span className="text-base">⊡</span>
             <span>Fit View</span>
           </button>
+
+          <div className="h-6 w-px bg-gray-700 mx-1" />
 
           <div className="flex items-center gap-1 bg-gray-800 border border-gray-700 rounded p-1">
             <button

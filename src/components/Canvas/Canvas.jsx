@@ -111,7 +111,17 @@ export default function Canvas({ onInit }) {
   );
 
   const onNodeClick = useCallback(
-    (event, node) => selectNode(node.id),
+    (event, node) => {
+      // If modifier key is pressed, let React Flow handle multi-selection
+      // We don't want to override it with our single-select store action
+      if (!event.metaKey && !event.ctrlKey) {
+        selectNode(node.id);
+      } else {
+        // Clear the specific selected node ID in UI store since we are in multi-select mode
+        // This ensures PropertiesPanel falls back to checking multiple selected nodes
+        selectNode(null);
+      }
+    },
     [selectNode]
   );
 

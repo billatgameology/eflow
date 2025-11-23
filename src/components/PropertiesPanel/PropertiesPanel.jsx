@@ -2,12 +2,13 @@ import { useUIStore } from '../../stores/useUIStore';
 import { useDiagramStore } from '../../stores/useDiagramStore';
 import NodeProperties from './NodeProperties';
 import EdgeProperties from './EdgeProperties';
+import AlignmentPanel from './AlignmentPanel';
 
 export default function PropertiesPanel() {
-  const { selectedNodeId, selectedEdgeId, isPropertiesPanelOpen, togglePropertiesPanel } = useUIStore();
+  const { selectedEdgeId, isPropertiesPanelOpen, togglePropertiesPanel } = useUIStore();
   const { nodes, edges } = useDiagramStore();
 
-  const selectedNode = nodes.find((n) => n.id === selectedNodeId);
+  const selectedNodes = nodes.filter((n) => n.selected);
   const selectedEdge = edges.find((e) => e.id === selectedEdgeId);
 
   if (!isPropertiesPanelOpen) {
@@ -34,8 +35,10 @@ export default function PropertiesPanel() {
           </button>
         </div>
 
-        {selectedNode ? (
-          <NodeProperties node={selectedNode} />
+        {selectedNodes.length > 1 ? (
+          <AlignmentPanel selectedNodes={selectedNodes} />
+        ) : selectedNodes.length === 1 ? (
+          <NodeProperties node={selectedNodes[0]} />
         ) : selectedEdge ? (
           <EdgeProperties edge={selectedEdge} />
         ) : (
