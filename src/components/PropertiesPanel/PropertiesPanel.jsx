@@ -1,12 +1,14 @@
 import { useUIStore } from '../../stores/useUIStore';
 import { useDiagramStore } from '../../stores/useDiagramStore';
 import NodeProperties from './NodeProperties';
+import EdgeProperties from './EdgeProperties';
 
 export default function PropertiesPanel() {
-  const { selectedNodeId, isPropertiesPanelOpen, togglePropertiesPanel } = useUIStore();
-  const { nodes } = useDiagramStore();
+  const { selectedNodeId, selectedEdgeId, isPropertiesPanelOpen, togglePropertiesPanel } = useUIStore();
+  const { nodes, edges } = useDiagramStore();
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
+  const selectedEdge = edges.find((e) => e.id === selectedEdgeId);
 
   if (!isPropertiesPanelOpen) {
     return (
@@ -34,11 +36,13 @@ export default function PropertiesPanel() {
 
         {selectedNode ? (
           <NodeProperties node={selectedNode} />
+        ) : selectedEdge ? (
+          <EdgeProperties edge={selectedEdge} />
         ) : (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <div className="text-4xl mb-3 opacity-50">🔧</div>
             <p className="text-gray-500 text-sm">
-              Select equipment to edit properties
+              Select equipment or connection to edit properties
             </p>
           </div>
         )}

@@ -15,7 +15,7 @@ import { edgeTypes } from '../edges/edgeTypes';
 
 export default function Canvas({ onInit }) {
   const { nodes, edges, setNodes, setEdges, addEdge: addEdgeToStore, addNode, saveToHistory } = useDiagramStore();
-  const { selectNode, clearSelection, gridType, snapToGrid } = useUIStore();
+  const { selectNode, selectEdge, clearSelection, gridType, snapToGrid } = useUIStore();
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
   const dragStartRef = useRef(false);
 
@@ -115,6 +115,11 @@ export default function Canvas({ onInit }) {
     [selectNode]
   );
 
+  const onEdgeClick = useCallback(
+    (event, edge) => selectEdge(edge.id),
+    [selectEdge]
+  );
+
   const onPaneClick = useCallback(
     () => clearSelection(),
     [clearSelection]
@@ -181,6 +186,7 @@ export default function Canvas({ onInit }) {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onNodeClick={onNodeClick}
+        onEdgeClick={onEdgeClick}
         onPaneClick={onPaneClick}
         onDrop={onDrop}
         onDragOver={onDragOver}
@@ -192,9 +198,9 @@ export default function Canvas({ onInit }) {
         snapGrid={[16, 16]}
         fitView
       >
-        <Background 
-          color="#4a5568" 
-          gap={16} 
+        <Background
+          color="#4a5568"
+          gap={16}
           variant={getBackgroundVariant()}
         />
         <Controls className="bg-gray-900 border border-gray-700" />

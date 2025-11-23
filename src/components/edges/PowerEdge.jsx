@@ -16,10 +16,10 @@ export default function PowerEdge({
   data,
   target,
   source,
+  selected,
 }) {
   const { faultedEdges, toggleEdgeFault, powerFlowMap } = useSimulationStore();
-  const { nodes } = useDiagramStore();
-  const [isHovered, setIsHovered] = useState(false);
+  const { nodes, removeEdge } = useDiagramStore();
   const isFaulted = faultedEdges.has(id);
 
   // Use smooth step path for 90-degree angled connections
@@ -37,7 +37,7 @@ export default function PowerEdge({
   // Get the source node's power info to determine the edge color
   const sourcePowerInfo = source ? powerFlowMap.get(source) : null;
   const targetPowerInfo = target ? powerFlowMap.get(target) : null;
-  
+
   // Edge is powered if source is powered and edge is not faulted
   const isPowered = sourcePowerInfo?.isPowered && !isFaulted;
 
@@ -52,19 +52,30 @@ export default function PowerEdge({
 
   const strokeWidth = isFaulted ? 3 : isPowered ? 2.5 : 1.5;
 
+  // Calculate filter for glow effect
+  const getFilter = () => {
+    if (selected) {
+      return `drop-shadow(0 0 5px ${edgeColor}) drop-shadow(0 0 10px ${edgeColor})`;
+    }
+    if (isFaulted) {
+      return 'drop-shadow(0 0 4px #FF0055)';
+    }
+    if (isPowered) {
+      return `drop-shadow(0 0 4px ${edgeColor})`;
+    }
+    return 'none';
+  };
+
   return (
-    <g onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
+    <g>
       <path
         id={id}
         style={{
           stroke: edgeColor,
-          strokeWidth,
+          strokeWidth: selected ? strokeWidth + 1 : strokeWidth,
           fill: 'none',
-          filter: isPowered && !isFaulted
-            ? `drop-shadow(0 0 4px ${edgeColor})`
-            : isFaulted
-            ? 'drop-shadow(0 0 4px #FF0055)'
-            : 'none',
+          filter: getFilter(),
+          transition: 'all 0.3s ease',
         }}
         d={edgePath}
         markerEnd={markerEnd}
@@ -76,7 +87,7 @@ export default function PowerEdge({
         fill="none"
         stroke="transparent"
         strokeWidth="20"
-        style={{ pointerEvents: 'stroke' }}
+        style={{ pointerEvents: 'stroke', cursor: 'pointer' }}
       />
 
       {/* Animated flow particles - only when powered */}
@@ -91,49 +102,8 @@ export default function PowerEdge({
         </>
       )}
 
-      {/* Fault Toggle Button - shown on hover */}
-      {isHovered && (
-        <g transform={`translate(${labelX}, ${labelY})`}>
-          <circle
-            r="12"
-            fill={isFaulted ? '#FF0055' : '#4A5568'}
-            stroke="#000"
-            strokeWidth="2"
-            className="cursor-pointer transition-all"
-            style={{
-              filter: isFaulted
-                ? 'drop-shadow(0 0 8px rgba(255, 0, 85, 0.8))'
-                : 'drop-shadow(0 0 6px rgba(156, 163, 175, 0.6))',
-              pointerEvents: 'auto',
-            }}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              toggleEdgeFault(id);
-            }}
-          />
-          <text
-            x="0"
-            y="0"
-            textAnchor="middle"
-            dominantBaseline="central"
-            fontSize="12"
-            fill="#fff"
-            fontWeight="bold"
-            style={{ pointerEvents: 'none' }}
-          >
-            {isFaulted ? '✓' : '✕'}
-          </text>
-          <title>{isFaulted ? 'Click to reconnect' : 'Click to disconnect'}</title>
-        </g>
-      )}
-
-      {/* Fault indicator - permanent when faulted and not hovered */}
-      {isFaulted && !isHovered && (
+      {/* Fault indicator - permanent when faulted */}
+      {isFaulted && (
         <g transform={`translate(${labelX}, ${labelY})`}>
           <circle r="8" fill="#FF0055" stroke="#000" strokeWidth="2" className="animate-pulse" />
           <text
