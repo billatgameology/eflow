@@ -3,6 +3,7 @@ export const EQUIPMENT_CATEGORIES = {
   DISTRIBUTION: 'distribution',
   PROTECTION: 'protection',
   END_EQUIPMENT: 'end-equipment',
+  MONITORING: 'monitoring',
 };
 
 export const equipmentDefinitions = {
@@ -153,6 +154,22 @@ export const equipmentDefinitions = {
     },
     ports: {
       input: 2,
+      output: 0,
+    },
+  },
+
+  // MONITORING
+  powerMeter: {
+    type: 'powerMeter',
+    label: 'Power Meter',
+    category: EQUIPMENT_CATEGORIES.MONITORING,
+    color: '#00FF9F',
+    icon: '📊',
+    defaultParameters: {
+      monitoredEdgeId: null,
+    },
+    ports: {
+      input: 0,
       output: 0,
     },
   },

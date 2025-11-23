@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { getSmoothStepPath } from 'reactflow';
 import { useSimulationStore } from '../../stores/useSimulationStore';
 import { useDiagramStore } from '../../stores/useDiagramStore';
+import { v4 as uuidv4 } from 'uuid';
+import { equipmentDefinitions } from '../../data/equipmentDefinitions';
 
 export default function PowerEdge({
   id,
@@ -19,8 +21,9 @@ export default function PowerEdge({
   selected,
 }) {
   const { faultedEdges, toggleEdgeFault, powerFlowMap } = useSimulationStore();
-  const { nodes, removeEdge } = useDiagramStore();
+  const { nodes, removeEdge, addNode } = useDiagramStore();
   const isFaulted = faultedEdges.has(id);
+  const [isHovered, setIsHovered] = useState(false);
 
   // Use smooth step path for 90-degree angled connections
   const [edgePath, labelX, labelY] = getSmoothStepPath({
@@ -66,8 +69,46 @@ export default function PowerEdge({
     return 'none';
   };
 
+  // Find power meters monitoring this edge
+  const powerMeters = nodes.filter(
+    node => node.type === 'powerMeter' && node.data?.parameters?.monitoredEdgeId === id
+  );
+
+  // Handle adding power meter
+  const handleAddPowerMeter = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    const powerMeterEquipment = equipmentDefinitions.powerMeter;
+    
+    // Create power meter node near the edge midpoint
+    const meterNode = {
+      id: uuidv4(),
+      type: 'powerMeter',
+      position: {
+        x: labelX + 60, // Offset to the right of the edge
+        y: labelY - 40, // Offset above the edge
+      },
+      data: {
+        label: 'Power Meter',
+        equipment: powerMeterEquipment,
+        parameters: {
+          ...powerMeterEquipment.defaultParameters,
+          monitoredEdgeId: id, // Link to this edge
+        },
+        measurements: {
+          current: 0,
+          voltage: 0,
+          power: 0,
+        },
+      },
+    };
+    
+    addNode(meterNode);
+  };
+
   return (
-    <g>
+    <g onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
       <path
         id={id}
         style={{
@@ -100,6 +141,64 @@ export default function PowerEdge({
             <animateMotion dur="2s" repeatCount="indefinite" path={edgePath} begin="1s" />
           </circle>
         </>
+      )}
+
+      {/* Power meter connection lines */}
+      {powerMeters.map(meter => {
+        const meterCenterX = meter.position.x + (meter.width || 200) / 2;
+        const meterCenterY = meter.position.y + (meter.height || 150) / 2;
+
+        return (
+          <g key={`meter-${meter.id}`}>
+            {/* Line from edge midpoint to meter */}
+            <path
+              d={`M ${labelX} ${labelY} L ${meterCenterX} ${meterCenterY}`}
+              stroke="#00FF9F"
+              strokeWidth="2"
+              strokeDasharray="5,5"
+              fill="none"
+              opacity="0.6"
+            />
+            {/* Indicator circle at edge midpoint */}
+            <circle
+              cx={labelX}
+              cy={labelY}
+              r="4"
+              fill="#00FF9F"
+              stroke="#000"
+              strokeWidth="1"
+            />
+          </g>
+        );
+      })}
+
+      {/* Add Power Meter Button - shows on hover */}
+      {isHovered && !isFaulted && (
+        <g transform={`translate(${labelX}, ${labelY})`}>
+          <circle
+            r="12"
+            fill="#00D9FF"
+            stroke="#000"
+            strokeWidth="2"
+            style={{ cursor: 'pointer', pointerEvents: 'all' }}
+            onClick={handleAddPowerMeter}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="hover:fill-cyan-400 transition-all"
+          />
+          <text
+            x="0"
+            y="0"
+            textAnchor="middle"
+            dominantBaseline="central"
+            fontSize="14"
+            fill="#000"
+            fontWeight="bold"
+            style={{ pointerEvents: 'none' }}
+            onClick={handleAddPowerMeter}
+          >
+            📊
+          </text>
+        </g>
       )}
 
       {/* Fault indicator - permanent when faulted */}
