@@ -19,6 +19,7 @@ export function useKeyboardShortcuts() {
     selectedNodeId, 
     selectedEdgeId, 
     clearSelection,
+    selectNode,
     copyToClipboard,
     getClipboard,
   } = useUIStore();
@@ -88,9 +89,11 @@ export function useKeyboardShortcuts() {
         e.preventDefault();
         const clipboard = getClipboard();
         if (clipboard && clipboard.type === 'node') {
+          const newNodeId = uuidv4();
           const newNode = {
             ...clipboard.data,
-            id: uuidv4(),
+            id: newNodeId,
+            selected: true, // Mark the new node as selected
             position: {
               x: clipboard.data.position.x + 50,
               y: clipboard.data.position.y + 50,
@@ -99,8 +102,22 @@ export function useKeyboardShortcuts() {
               ...clipboard.data.data,
               label: `${clipboard.data.data.label} (Copy)`,
             },
+            parentNode: undefined, // Ensure no parent
+            extent: undefined, // Clear any extent restrictions
           };
+          
+          // Deselect all existing nodes before adding the new one
+          const updatedNodes = nodes.map(node => ({
+            ...node,
+            selected: false
+          }));
+          
+          // Update all nodes to deselected state first
+          useDiagramStore.setState({ nodes: updatedNodes });
+          
+          // Then add the new node (which is already marked as selected)
           addNode(newNode);
+          selectNode(newNodeId); // Update UI store selection
           addToast('Node pasted', 'success');
         }
       }
@@ -141,7 +158,8 @@ export function useKeyboardShortcuts() {
     edges,
     removeNode, 
     removeEdge,
-    clearSelection, 
+    clearSelection,
+    selectNode,
     saveDiagram,
     undo,
     redo,

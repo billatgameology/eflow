@@ -67,6 +67,125 @@ export default function AlignmentPanel({ selectedNodes }) {
         );
     };
 
+    const handleDistribute = (direction) => {
+        if (selectedNodes.length < 3) return;
+
+        saveToHistory();
+
+        // Sort nodes by position
+        const sortedNodes = [...selectedNodes].sort((a, b) => {
+            if (direction === 'horizontal') {
+                return a.position.x - b.position.x;
+            } else {
+                return a.position.y - b.position.y;
+            }
+        });
+
+        if (direction === 'horizontal') {
+            // Get the bounds
+            const firstNode = sortedNodes[0];
+            const lastNode = sortedNodes[sortedNodes.length - 1];
+            const startX = firstNode.position.x;
+            const endX = lastNode.position.x + (lastNode.width || 0);
+            
+            // Calculate total width of all nodes
+            const totalNodesWidth = sortedNodes.reduce((sum, node) => sum + (node.width || 0), 0);
+            
+            // Calculate total available space and gap
+            const totalSpace = endX - startX;
+            const totalGapSpace = totalSpace - totalNodesWidth;
+            const gap = totalGapSpace / (sortedNodes.length - 1);
+
+            // Build position map
+            const positionMap = new Map();
+            let currentX = startX;
+            
+            sortedNodes.forEach((node, index) => {
+                const nodeWidth = node.width || 0;
+                
+                if (index === 0 || index === sortedNodes.length - 1) {
+                    // Keep first and last nodes in place
+                    positionMap.set(node.id, node.position.x);
+                    if (index === 0) {
+                        currentX = startX + nodeWidth + gap;
+                    }
+                } else {
+                    positionMap.set(node.id, currentX);
+                    currentX = currentX + nodeWidth + gap;
+                }
+            });
+            
+            setNodes(
+                nodes.map((n) => {
+                    if (positionMap.has(n.id)) {
+                        const newX = positionMap.get(n.id);
+                        if (newX !== n.position.x) {
+                            return {
+                                ...n,
+                                position: {
+                                    ...n.position,
+                                    x: newX
+                                }
+                            };
+                        }
+                    }
+                    return n;
+                })
+            );
+        } else {
+            // Get the bounds
+            const firstNode = sortedNodes[0];
+            const lastNode = sortedNodes[sortedNodes.length - 1];
+            const startY = firstNode.position.y;
+            const endY = lastNode.position.y + (lastNode.height || 0);
+            
+            // Calculate total height of all nodes
+            const totalNodesHeight = sortedNodes.reduce((sum, node) => sum + (node.height || 0), 0);
+            
+            // Calculate total available space and gap
+            const totalSpace = endY - startY;
+            const totalGapSpace = totalSpace - totalNodesHeight;
+            const gap = totalGapSpace / (sortedNodes.length - 1);
+
+            // Build position map
+            const positionMap = new Map();
+            let currentY = startY;
+            
+            sortedNodes.forEach((node, index) => {
+                const nodeHeight = node.height || 0;
+                
+                if (index === 0 || index === sortedNodes.length - 1) {
+                    // Keep first and last nodes in place
+                    positionMap.set(node.id, node.position.y);
+                    if (index === 0) {
+                        currentY = startY + nodeHeight + gap;
+                    }
+                } else {
+                    positionMap.set(node.id, currentY);
+                    currentY = currentY + nodeHeight + gap;
+                }
+            });
+            
+            setNodes(
+                nodes.map((n) => {
+                    if (positionMap.has(n.id)) {
+                        const newY = positionMap.get(n.id);
+                        if (newY !== n.position.y) {
+                            return {
+                                ...n,
+                                position: {
+                                    ...n.position,
+                                    y: newY
+                                }
+                            };
+                        }
+                    }
+                    return n;
+                })
+            );
+        }
+    };
+
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -138,6 +257,46 @@ export default function AlignmentPanel({ selectedNodes }) {
                         </span>
                         <span className="text-xs text-gray-300">Center Y</span>
                     </button>
+                </div>
+
+                {/* Distribution Controls */}
+                <div className="border-t border-gray-700 pt-4 mt-4">
+                    <h4 className="text-xs text-gray-400 uppercase tracking-wide mb-3">
+                        Distribute
+                    </h4>
+                    <div className="grid grid-cols-2 gap-2">
+                        <button
+                            onClick={() => handleDistribute('horizontal')}
+                            disabled={selectedNodes.length < 3}
+                            className="p-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded transition-colors flex flex-col items-center gap-1 disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="Distribute Horizontally"
+                        >
+                            <div className="flex gap-1 items-center">
+                                <span className="w-1 h-3 bg-gray-400"></span>
+                                <span className="w-1 h-3 bg-gray-400"></span>
+                                <span className="w-1 h-3 bg-gray-400"></span>
+                            </div>
+                            <span className="text-xs text-gray-300">Horizontal</span>
+                        </button>
+                        <button
+                            onClick={() => handleDistribute('vertical')}
+                            disabled={selectedNodes.length < 3}
+                            className="p-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded transition-colors flex flex-col items-center gap-1 disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="Distribute Vertically"
+                        >
+                            <div className="flex flex-col gap-1 items-center">
+                                <span className="h-1 w-3 bg-gray-400"></span>
+                                <span className="h-1 w-3 bg-gray-400"></span>
+                                <span className="h-1 w-3 bg-gray-400"></span>
+                            </div>
+                            <span className="text-xs text-gray-300">Vertical</span>
+                        </button>
+                    </div>
+                    {selectedNodes.length < 3 && (
+                        <p className="text-xs text-gray-600 mt-2 text-center">
+                            Select 3+ items to distribute
+                        </p>
+                    )}
                 </div>
             </div>
         </div>
