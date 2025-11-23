@@ -6,6 +6,7 @@ import Canvas from '../Canvas/Canvas';
 import PropertiesPanel from '../PropertiesPanel/PropertiesPanel';
 import KeyboardShortcutsHelp from './KeyboardShortcutsHelp';
 import Toast from './Toast';
+import LoadProfilePane from './LoadProfilePane';
 
 export default function MainLayout() {
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
@@ -30,6 +31,9 @@ export default function MainLayout() {
 
       {/* Keyboard Shortcuts Help */}
       <KeyboardShortcutsHelp />
+
+      {/* Bottom Load Profile Pane */}
+      <LoadProfilePane />
 
       {/* Toast Notifications */}
       <Toast />

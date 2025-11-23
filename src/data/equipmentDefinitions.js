@@ -1,3 +1,5 @@
+import { createDefaultLoadProfile } from '../utils/loadProfile';
+
 export const EQUIPMENT_CATEGORIES = {
   GENERATION: 'generation',
   DISTRIBUTION: 'distribution',
@@ -152,6 +154,7 @@ export const equipmentDefinitions = {
       current: 20,
       racksInRow: 1,
     },
+    loadProfile: createDefaultLoadProfile(),
     ports: {
       input: 2,
       output: 0,

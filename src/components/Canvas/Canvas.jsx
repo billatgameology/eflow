@@ -13,6 +13,7 @@ import { useUIStore } from '../../stores/useUIStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
 import { nodeTypes } from '../nodes/nodeTypes';
 import { edgeTypes } from '../edges/edgeTypes';
+import { cloneLoadProfile } from '../../utils/loadProfile';
 
 export default function Canvas({ onInit }) {
   const { nodes, edges, setNodes, setEdges, addEdge: addEdgeToStore, addNode, saveToHistory } = useDiagramStore();
@@ -160,6 +161,9 @@ export default function Canvas({ onInit }) {
           label: equipmentData.label,
           equipment: equipmentData,
           parameters: { ...equipmentData.defaultParameters },
+          loadProfile: equipmentData.loadProfile
+            ? cloneLoadProfile(equipmentData.loadProfile)
+            : null,
         },
       };
 
