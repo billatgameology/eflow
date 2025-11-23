@@ -146,9 +146,10 @@ export const equipmentDefinitions = {
     category: EQUIPMENT_CATEGORIES.END_EQUIPMENT,
     color: '#9CA3AF',
     defaultParameters: {
-      voltage: 208,
       powerDraw: 5,
-      redundancy: 'dual',
+      voltage: 208,
+      current: 20,
+      racksInRow: 1,
     },
     ports: {
       input: 2,
