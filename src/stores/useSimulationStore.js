@@ -52,6 +52,17 @@ export const useSimulationStore = create((set, get) => ({
     });
   },
 
+  addNodeFault: (nodeId) => {
+    set((state) => {
+      const newFaulted = new Set(state.faultedNodes);
+      if (!newFaulted.has(nodeId)) {
+        newFaulted.add(nodeId);
+        return { faultedNodes: newFaulted };
+      }
+      return state;
+    });
+  },
+
   toggleEdgeFault: (edgeId) => {
     set((state) => {
       const newFaulted = new Set(state.faultedEdges);

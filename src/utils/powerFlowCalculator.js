@@ -106,7 +106,7 @@ export function extractPowerSources(nodes) {
  * Calculate instantaneous load for all nodes (Bottom-Up)
  * Returns a Map of nodeId -> loadInWatts (number)
  */
-export function calculateInstantaneousLoad(nodes, edges, faultedNodes, faultedEdges, simulationHour = 0) {
+export function calculateInstantaneousLoad(nodes, edges, faultedNodes, faultedEdges, simulationHour = 0, powerFlowMap = null) {
   const loadMap = new Map();
 
   // Initialize all nodes with 0 load
@@ -119,6 +119,15 @@ export function calculateInstantaneousLoad(nodes, edges, faultedNodes, faultedEd
 
   servers.forEach((server) => {
     if (faultedNodes.has(server.id)) return;
+
+    // Only calculate load if the server is actually powered
+    if (powerFlowMap) {
+      const powerInfo = powerFlowMap.get(server.id);
+      if (!powerInfo?.isPowered) {
+        loadMap.set(server.id, 0);
+        return;
+      }
+    }
 
     // Get rated power (default to 10kW if missing)
     const ratedKW = server.data.parameters?.kwRating || 10;
@@ -226,13 +235,20 @@ export function calculateInstantaneousLoad(nodes, edges, faultedNodes, faultedEd
       let totalLoad = 0;
 
       consumers.forEach(consumerId => {
+        // Skip if consumer is faulted - faulted nodes don't pull load
+        if (faultedNodes.has(consumerId)) return;
+
         // How much load does this consumer pull from THIS source?
         // Check how many active sources the consumer has.
         const consumerNode = nodes.find(n => n.id === consumerId);
         if (!consumerNode) return;
 
-        // Find all active sources for this consumer
-        const incomingEdges = edges.filter(e => e.target === consumerId && !faultedEdges.has(e.id));
+        // Find all active sources for this consumer (excluding faulted source nodes)
+        const incomingEdges = edges.filter(e =>
+          e.target === consumerId &&
+          !faultedEdges.has(e.id) &&
+          !faultedNodes.has(e.source) // Don't count sources that are faulted
+        );
         const activeSourcesCount = incomingEdges.length;
 
         if (activeSourcesCount > 0) {

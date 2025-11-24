@@ -13,6 +13,7 @@ export function useSimulation() {
     setPowerSources,
     setInstantaneousLoadMap,
     instantaneousLoadMap,
+    addNodeFault,
   } = useSimulationStore();
 
   // Auto-calculate power flow whenever diagram changes
@@ -31,15 +32,53 @@ export function useSimulation() {
 
     setPowerFlowMap(flowMap);
 
-    // Calculate instantaneous load
+    // Calculate instantaneous load (pass flowMap to check if nodes are powered)
     const loadMap = calculateInstantaneousLoad(
       nodes,
       edges,
       faultedNodes,
       faultedEdges,
-      simulationHour
+      simulationHour,
+      flowMap
     );
     setInstantaneousLoadMap(loadMap);
+
+    // Overload Protection: Only for circuit breakers and switchgear
+    nodes.forEach((node) => {
+      // Only check circuit breakers and switchgear
+      if (node.type !== 'circuitBreaker' && node.type !== 'switchgear') return;
+
+      // Skip if already faulted
+      if (faultedNodes.has(node.id)) return;
+
+      const currentLoadWatts = loadMap.get(node.id) || 0;
+      const currentLoadKW = currentLoadWatts / 1000;
+
+      // Check kW Rating (Max Load) - with 5% tolerance to avoid edge cases
+      if (node.data?.parameters?.kwRating) {
+        let ratedKW = parseFloat(node.data.parameters.kwRating);
+
+        // Only fault if load exceeds 105% of rating
+        if (currentLoadKW > ratedKW * 1.05) {
+          addNodeFault(node.id);
+        }
+      }
+
+      // Check Amperage Rating (if available) - with 5% tolerance
+      // Support both 'current' and 'ampRating' parameter names
+      const ratedAmps = node.data?.parameters?.current || node.data?.parameters?.ampRating;
+      if (ratedAmps) {
+        const ratedAmpsValue = parseFloat(ratedAmps);
+        const voltage = node.data.parameters.voltage || 120; // Default voltage if missing
+        const currentAmps = currentLoadWatts / voltage;
+
+        // Only fault if current exceeds 105% of rating
+        if (currentAmps > ratedAmpsValue * 1.05) {
+          addNodeFault(node.id);
+        }
+      }
+    });
+
 
     // Update power meter measurements
     nodes.forEach((node) => {

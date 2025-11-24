@@ -21,7 +21,7 @@ export default function SwitchgearNode(props) {
             <div className="flex flex-col items-center justify-center gap-1 w-full px-1">
                 {/* Switchgear Icon */}
                 {/* Switchgear Icon: Input -> Bus -> Breakers -> Outputs */}
-                <svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="1.5" className={isPowered ? "text-neon-green" : "text-gray-500"}>
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="1.5" className={isPowered ? "text-white" : "text-gray-500"}>
                     {/* Main Busbar (Horizontal) */}
                     <path d="M4 12h32" strokeWidth="2.5" />
 
