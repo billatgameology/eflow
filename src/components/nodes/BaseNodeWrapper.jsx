@@ -130,10 +130,10 @@ export default function BaseNodeWrapper({ id, data, selected, children, classNam
           {/* Sub-label (Rating/Voltage) */}
           {(data.parameters?.voltage || data.parameters?.kvaRating || data.parameters?.kwRating) && (
             <div className="flex flex-col items-center">
-              <span className="text-[10px] text-gray-400 font-mono block">
-                {data.parameters?.kvaRating ? `${data.parameters.kvaRating}kVA` :
-                  data.parameters?.kwRating ? `${data.parameters.kwRating}kW` :
-                    data.parameters?.voltage ? `${data.parameters.voltage}V` : ''}
+              <span className="text-[10px] font-mono block">
+                {data.parameters?.kvaRating ? <span className="text-gray-400">{data.parameters.kvaRating}kVA</span> :
+                  (data.parameters?.kwRating && data.equipment?.type !== 'server') ? <span className="text-neon-cyan">{data.parameters.kwRating}kW</span> :
+                    data.parameters?.voltage ? <span className="text-gray-400">{data.parameters.voltage}V</span> : ''}
               </span>
               {/* Instantaneous Load Display */}
               {instantaneousLoadMap && instantaneousLoadMap.has(id) && (

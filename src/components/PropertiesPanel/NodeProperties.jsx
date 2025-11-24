@@ -297,7 +297,10 @@ export default function NodeProperties({ node }) {
                       }
                       className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 pr-12 text-sm text-white font-mono focus:border-neon-cyan focus:outline-none focus:ring-1 focus:ring-neon-cyan transition-all"
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
+                    <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs ${key.includes('kw') || key.includes('Kw') ? 'text-neon-cyan' :
+                        key.includes('amp') || key.includes('Amp') ? 'text-neon-green' :
+                          'text-gray-500'
+                      }`}>
                       {key.includes('voltage') || key.includes('Voltage')
                         ? 'V'
                         : key.includes('amp') || key.includes('Amp')

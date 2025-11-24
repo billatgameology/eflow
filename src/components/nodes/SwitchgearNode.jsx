@@ -28,18 +28,18 @@ export default function SwitchgearNode(props) {
                 </svg>
 
                 {/* Power Meter */}
-                <div className="bg-black/80 border border-gray-600 rounded p-1 w-full text-[8px] font-mono text-neon-cyan shadow-inner">
+                <div className="bg-black/80 border border-gray-600 rounded p-1 w-full text-[8px] font-mono shadow-inner">
                     <div className="flex justify-between px-1">
-                        <span className="text-gray-400">V</span>
-                        <span>{voltage}</span>
+                        <span className="text-gray-500">V</span>
+                        <span className="text-gray-300">{voltage}</span>
                     </div>
                     <div className="flex justify-between px-1">
-                        <span className="text-gray-400">A</span>
-                        <span>{current.toFixed(1)}</span>
+                        <span className="text-gray-500">A</span>
+                        <span className="text-neon-green">{current.toFixed(1)}</span>
                     </div>
-                    <div className="flex justify-between border-t border-gray-700 mt-0.5 pt-0.5 px-1 font-bold text-white">
-                        <span className="text-gray-400">kW</span>
-                        <span>{powerKW.toFixed(1)}</span>
+                    <div className="flex justify-between border-t border-gray-700 mt-0.5 pt-0.5 px-1 font-bold">
+                        <span className="text-gray-500">kW</span>
+                        <span className="text-neon-cyan">{powerKW.toFixed(1)}</span>
                     </div>
                 </div>
             </div>
