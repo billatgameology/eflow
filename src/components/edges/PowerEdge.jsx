@@ -78,9 +78,9 @@ export default function PowerEdge({
   const handleAddPowerMeter = (e) => {
     e.stopPropagation();
     e.preventDefault();
-    
+
     const powerMeterEquipment = equipmentDefinitions.powerMeter;
-    
+
     // Create power meter node near the edge midpoint
     const meterNode = {
       id: uuidv4(),
@@ -103,7 +103,7 @@ export default function PowerEdge({
         },
       },
     };
-    
+
     addNode(meterNode);
   };
 
@@ -133,14 +133,24 @@ export default function PowerEdge({
 
       {/* Animated flow particles - only when powered */}
       {isPowered && !isFaulted && (
-        <>
-          <circle r="4" fill={edgeColor} stroke="#fff" strokeWidth="1">
-            <animateMotion dur="2s" repeatCount="indefinite" path={edgePath} />
-          </circle>
-          <circle r="4" fill={edgeColor} stroke="#fff" strokeWidth="1" opacity="0.7">
-            <animateMotion dur="2s" repeatCount="indefinite" path={edgePath} begin="1s" />
-          </circle>
-        </>
+        (() => {
+          // Calculate approximate path length (Manhattan distance)
+          const length = Math.abs(sourceX - targetX) + Math.abs(sourceY - targetY);
+          // Constant speed: 100 pixels per second
+          const speed = 100;
+          const duration = Math.max(length / speed, 1); // Minimum 1s duration
+
+          return (
+            <>
+              <circle r="4" fill={edgeColor} stroke="#fff" strokeWidth="1">
+                <animateMotion dur={`${duration}s`} repeatCount="indefinite" path={edgePath} />
+              </circle>
+              <circle r="4" fill={edgeColor} stroke="#fff" strokeWidth="1" opacity="0.7">
+                <animateMotion dur={`${duration}s`} repeatCount="indefinite" path={edgePath} begin={`${duration / 2}s`} />
+              </circle>
+            </>
+          );
+        })()
       )}
 
       {/* Power meter connection lines */}
