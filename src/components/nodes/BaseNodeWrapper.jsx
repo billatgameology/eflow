@@ -123,7 +123,7 @@ export default function BaseNodeWrapper({ id, data, selected, children, classNam
 
         {/* Label */}
         <div className="text-center mt-1">
-          <span className="text-xs font-bold text-white tracking-wide drop-shadow-md block truncate max-w-[140px]">
+          <span className="text-xs font-bold text-white tracking-wide drop-shadow-md block truncate max-w-[120px] w-full">
             {data.label || data.equipment?.label}
           </span>
 

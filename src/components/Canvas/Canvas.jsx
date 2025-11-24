@@ -1,4 +1,5 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import ReactFlow, {
   Background,
   Controls,
@@ -15,8 +16,19 @@ import { nodeTypes } from '../nodes/nodeTypes';
 import { edgeTypes } from '../edges/edgeTypes';
 import { cloneLoadProfile } from '../../utils/loadProfile';
 
+const LOAD_PROFILE_OFFSET = 160;
+
 export default function Canvas({ onInit }) {
-  const { nodes, edges, setNodes, setEdges, addEdge: addEdgeToStore, addNode, saveToHistory } = useDiagramStore();
+  const {
+    nodes,
+    edges,
+    setNodes,
+    setEdges,
+    addEdge: addEdgeToStore,
+    addNode,
+    saveToHistory,
+    updateNode,
+  } = useDiagramStore();
   const { selectNode, selectEdge, clearSelection, gridType, snapToGrid } = useUIStore();
   const { powerFlowMap } = useSimulationStore();
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
@@ -46,6 +58,21 @@ export default function Canvas({ onInit }) {
                 ? { ...node, position: change.position }
                 : node
             );
+
+            const movedNode = nodes.find((node) => node.id === change.id);
+            if (movedNode?.type === 'server' && movedNode.data?.profileNodeId) {
+              updatedNodes = updatedNodes.map((node) =>
+                node.id === movedNode.data.profileNodeId
+                  ? {
+                      ...node,
+                      position: {
+                        x: change.position.x,
+                        y: change.position.y + LOAD_PROFILE_OFFSET,
+                      },
+                    }
+                  : node
+              );
+            }
           }
         } else if (change.type === 'remove') {
           needsHistorySave = true;
@@ -154,7 +181,10 @@ export default function Canvas({ onInit }) {
         y: event.clientY,
       });
 
+      const newNodeId = uuidv4();
+      const isServerNode = equipmentData.type === 'server';
       const newNode = {
+        id: newNodeId,
         type: equipmentData.type,
         position,
         data: {
@@ -167,7 +197,39 @@ export default function Canvas({ onInit }) {
         },
       };
 
+      if (isServerNode) {
+        newNode.data.profileNodeId = `${newNodeId}-profile`;
+      }
+
       addNode(newNode);
+
+      if (isServerNode) {
+        const profileNodeId = newNode.data.profileNodeId;
+        addNode({
+          id: profileNodeId,
+          type: 'loadProfile',
+          position: {
+            x: position.x,
+            y: position.y + LOAD_PROFILE_OFFSET,
+          },
+          data: {
+            parentNodeId: newNodeId,
+          },
+          selectable: false,
+          draggable: false,
+          deletable: false,
+        });
+
+        addEdgeToStore({
+          id: `${newNodeId}-profile-edge`,
+          source: newNodeId,
+          target: profileNodeId,
+          sourceHandle: 'profile-link',
+          targetHandle: 'profile-link-target',
+          type: 'relationship',
+          selectable: false,
+        });
+      }
     },
     [reactFlowInstance, addNode]
   );
@@ -176,6 +238,73 @@ export default function Canvas({ onInit }) {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
   }, []);
+
+  useEffect(() => {
+    nodes.forEach((node) => {
+      if (node.type !== 'server') return;
+      const profileNodeId = node.data?.profileNodeId || `${node.id}-profile`;
+      const hasProfileNode = nodes.some((n) => n.id === profileNodeId);
+      if (!hasProfileNode) {
+        addNode({
+          id: profileNodeId,
+          type: 'loadProfile',
+          position: {
+            x: node.position.x,
+            y: node.position.y + LOAD_PROFILE_OFFSET,
+          },
+          data: { parentNodeId: node.id },
+          selectable: false,
+          draggable: false,
+          deletable: false,
+        });
+      }
+
+      if (node.data?.profileNodeId !== profileNodeId) {
+        updateNode(node.id, {
+          data: {
+            ...node.data,
+            profileNodeId,
+          },
+        });
+      }
+
+      const edgeId = `${node.id}-profile-edge`;
+      const hasEdge = edges.some((edge) => edge.id === edgeId);
+      if (!hasEdge) {
+        addEdgeToStore({
+          id: edgeId,
+          source: node.id,
+          target: profileNodeId,
+          sourceHandle: 'profile-link',
+          targetHandle: 'profile-link-target',
+          type: 'relationship',
+          selectable: false,
+        });
+      } else {
+        const existingEdge = edges.find((edge) => edge.id === edgeId);
+        if (
+          existingEdge &&
+          (existingEdge.sourceHandle !== 'profile-link' ||
+            existingEdge.targetHandle !== 'profile-link-target' ||
+            existingEdge.type !== 'relationship')
+        ) {
+          setEdges(
+            edges.map((edge) =>
+              edge.id === edgeId
+                ? {
+                    ...edge,
+                    sourceHandle: 'profile-link',
+                    targetHandle: 'profile-link-target',
+                    type: 'relationship',
+                    selectable: false,
+                  }
+                : edge
+            )
+          );
+        }
+      }
+    });
+  }, [nodes, edges, addNode, addEdgeToStore, updateNode, setEdges]);
 
   // Map gridType string to BackgroundVariant enum
   const getBackgroundVariant = () => {

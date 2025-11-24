@@ -3,7 +3,14 @@ import { useDiagramStore } from '../../stores/useDiagramStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
 
 export default function Toolbar({ reactFlowInstance }) {
-  const { gridType, setGridType, snapToGrid, toggleSnapToGrid } = useUIStore();
+  const {
+    gridType,
+    setGridType,
+    snapToGrid,
+    toggleSnapToGrid,
+    showLoadProfileOverlays,
+    toggleLoadProfileOverlays,
+  } = useUIStore();
   const { nodes, setNodes, saveToHistory } = useDiagramStore();
   const {
     isSimulating,
@@ -105,6 +112,22 @@ export default function Toolbar({ reactFlowInstance }) {
               <rect x="3" y="14" width="7" height="7" />
             </svg>
             <span>Snap to Grid</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={toggleLoadProfileOverlays}
+            className={`px-4 py-1.5 border rounded text-sm font-medium flex items-center gap-2 transition-all ${
+              showLoadProfileOverlays
+                ? 'bg-neon-cyan text-black border-neon-cyan'
+                : 'bg-gray-800 text-gray-200 border-gray-700 hover:border-neon-cyan hover:bg-gray-700'
+            }`}
+            title="Toggle Load Profile Overlays"
+          >
+            <span role="img" aria-label="chart">
+              🗠
+            </span>
+            <span>{showLoadProfileOverlays ? 'Hide' : 'Show'} Graph</span>
           </button>
 
           <div className="flex items-center gap-1 bg-gray-800 border border-gray-700 rounded-full px-2 py-1">

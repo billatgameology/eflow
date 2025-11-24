@@ -10,6 +10,7 @@ export const useUIStore = create((set) => ({
   clipboard: null,
   gridType: 'dots', // ReactFlow variants: 'dots', 'lines', 'cross'
   snapToGrid: false,
+  showLoadProfileOverlays: true,
 
   // Actions
   selectNode: (id) => set({
@@ -42,6 +43,10 @@ export const useUIStore = create((set) => ({
   setGridType: (type) => set({ gridType: type }),
 
   toggleSnapToGrid: () => set((state) => ({ snapToGrid: !state.snapToGrid })),
+
+  toggleLoadProfileOverlays: () => set((state) => ({
+    showLoadProfileOverlays: !state.showLoadProfileOverlays,
+  })),
 
   // Clipboard actions
   copyToClipboard: (data) => set({ clipboard: data }),

@@ -99,12 +99,37 @@ export const useDiagramStore = create((set, get) => ({
 
   removeNode: (id) => {
     get().saveToHistory();
-    set((state) => ({
-      nodes: state.nodes.filter((node) => node.id !== id),
-      edges: state.edges.filter((edge) =>
-        edge.source !== id && edge.target !== id
-      ),
-    }));
+    set((state) => {
+      const nodeToRemove = state.nodes.find((node) => node.id === id);
+      let nodes = state.nodes.filter((node) => node.id !== id);
+      let edges = state.edges.filter(
+        (edge) => edge.source !== id && edge.target !== id
+      );
+
+      if (nodeToRemove?.data?.profileNodeId) {
+        const profileId = nodeToRemove.data.profileNodeId;
+        nodes = nodes.filter((node) => node.id !== profileId);
+        edges = edges.filter(
+          (edge) => edge.source !== profileId && edge.target !== profileId
+        );
+      }
+
+      if (nodeToRemove?.type === 'loadProfile' && nodeToRemove.data?.parentNodeId) {
+        nodes = nodes.map((node) =>
+          node.id === nodeToRemove.data.parentNodeId
+            ? {
+                ...node,
+                data: {
+                  ...node.data,
+                  profileNodeId: null,
+                },
+              }
+            : node
+        );
+      }
+
+      return { nodes, edges };
+    });
   },
 
   addEdge: (edge) => {
