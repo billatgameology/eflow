@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useDiagramStore } from '../../stores/useDiagramStore';
+import { useSimulationStore } from '../../stores/useSimulationStore';
 import { EQUIPMENT_CATEGORIES } from '../../data/equipmentDefinitions';
 import LoadProfileEditor from './LoadProfileEditor';
 import { createDefaultLoadProfile } from '../../utils/loadProfile';
@@ -7,6 +8,7 @@ import { loadProfileTemplates } from '../../utils/loadProfileTemplates';
 
 export default function NodeProperties({ node }) {
   const { updateNode } = useDiagramStore();
+  const { instantaneousLoadMap } = useSimulationStore();
   const [isLoadProfileCollapsed, setIsLoadProfileCollapsed] = useState(false);
   const isEndEquipment =
     node.data.equipment.category === EQUIPMENT_CATEGORIES.END_EQUIPMENT;
@@ -210,10 +212,9 @@ export default function NodeProperties({ node }) {
                 onClick={() => handleColorChange(color.value)}
                 className={`
                   h-10 rounded-lg border-2 transition-all
-                  ${
-                    node.data.equipment.color === color.value
-                      ? 'border-white scale-110'
-                      : 'border-gray-700 hover:border-gray-500'
+                  ${node.data.equipment.color === color.value
+                    ? 'border-white scale-110'
+                    : 'border-gray-700 hover:border-gray-500'
                   }
                 `}
                 style={{
@@ -239,12 +240,34 @@ export default function NodeProperties({ node }) {
           Equipment Parameters
         </h3>
 
+        {/* Real-time Load Display for Servers */}
+        {node.type === 'server' && (
+          <div className="bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 mb-3">
+            <label className="block text-xs text-gray-500 mb-1">
+              Real-time Load (Calculated)
+            </label>
+            <div className="flex items-baseline gap-2">
+              <span className="text-lg font-mono text-neon-cyan font-bold">
+                {instantaneousLoadMap?.has(node.id)
+                  ? (instantaneousLoadMap.get(node.id) / 1000).toFixed(2)
+                  : '0.00'}
+              </span>
+              <span className="text-xs text-gray-400">kW</span>
+            </div>
+            <div className="text-[10px] text-gray-500 mt-1">
+              {node.data.parameters?.racksInRow || 1} racks × {node.data.parameters?.kwRating || 10}kW rating × utilization
+            </div>
+          </div>
+        )}
+
         <div className="space-y-3">
           {Object.entries(node.data.parameters).map(([key, value]) => {
             const inputType = getInputType(value);
 
             // Skip isPowerSource from regular parameters (handled separately)
             if (key === 'isPowerSource') return null;
+            // Skip powerDraw as it is now calculated
+            if (key === 'powerDraw') return null;
 
             return (
               <div key={key}>
@@ -278,18 +301,18 @@ export default function NodeProperties({ node }) {
                       {key.includes('voltage') || key.includes('Voltage')
                         ? 'V'
                         : key.includes('amp') || key.includes('Amp')
-                        ? 'A'
-                        : key.includes('kw') || key.includes('Kw')
-                        ? 'kW'
-                        : key.includes('kva') || key.includes('Kva')
-                        ? 'kVA'
-                        : key.includes('phase')
-                        ? 'Ø'
-                        : key.includes('time') || key.includes('Time')
-                        ? 'ms'
-                        : key.includes('runtime') || key.includes('Runtime')
-                        ? 'min'
-                        : ''}
+                          ? 'A'
+                          : key.includes('kw') || key.includes('Kw')
+                            ? 'kW'
+                            : key.includes('kva') || key.includes('Kva')
+                              ? 'kVA'
+                              : key.includes('phase')
+                                ? 'Ø'
+                                : key.includes('time') || key.includes('Time')
+                                  ? 'ms'
+                                  : key.includes('runtime') || key.includes('Runtime')
+                                    ? 'min'
+                                    : ''}
                     </span>
                   </div>
                 ) : (

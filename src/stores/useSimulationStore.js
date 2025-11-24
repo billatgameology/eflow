@@ -9,6 +9,7 @@ export const useSimulationStore = create((set, get) => ({
   faultedNodes: new Set(),
   faultedEdges: new Set(),
   powerFlowMap: new Map(),
+  instantaneousLoadMap: new Map(),
 
   // Actions
   startSimulation: () => {
@@ -64,6 +65,7 @@ export const useSimulationStore = create((set, get) => ({
   },
 
   setPowerFlowMap: (map) => set({ powerFlowMap: map }),
+  setInstantaneousLoadMap: (map) => set({ instantaneousLoadMap: map }),
 
   addPowerSource: (source) => set((state) => ({
     powerSources: [...state.powerSources, source],

@@ -12,6 +12,7 @@ import 'reactflow/dist/style.css';
 import { useDiagramStore } from '../../stores/useDiagramStore';
 import { useUIStore } from '../../stores/useUIStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
+import { useToastStore } from '../Layout/Toast';
 import { nodeTypes } from '../nodes/nodeTypes';
 import { edgeTypes } from '../edges/edgeTypes';
 import { cloneLoadProfile } from '../../utils/loadProfile';
@@ -32,6 +33,7 @@ export default function Canvas({ onInit }) {
   } = useDiagramStore();
   const { selectNode, selectEdge, clearSelection, gridType, snapToGrid } = useUIStore();
   const { powerFlowMap } = useSimulationStore();
+  const { addToast } = useToastStore();
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
   const dragStartRef = useRef(false);
 
@@ -71,12 +73,12 @@ export default function Canvas({ onInit }) {
               updatedNodes = updatedNodes.map((node) =>
                 node.id === movedNode.data.profileNodeId
                   ? {
-                      ...node,
-                      position: {
-                        x: change.position.x,
-                        y: change.position.y + profileOffset,
-                      },
-                    }
+                    ...node,
+                    position: {
+                      x: change.position.x,
+                      y: change.position.y + profileOffset,
+                    },
+                  }
                   : node
               );
             }
@@ -137,6 +139,22 @@ export default function Canvas({ onInit }) {
 
   const onConnect = useCallback(
     (params) => {
+      const sourceNode = nodes.find((n) => n.id === params.source);
+      const targetNode = nodes.find((n) => n.id === params.target);
+
+      if (sourceNode?.data?.parameters?.voltage && targetNode?.data?.parameters?.voltage) {
+        const sourceVoltage = parseInt(sourceNode.data.parameters.voltage);
+        const targetVoltage = parseInt(targetNode.data.parameters.voltage);
+
+        if (sourceVoltage !== targetVoltage) {
+          addToast(
+            `Voltage Mismatch: Cannot connect ${sourceVoltage}V source to ${targetVoltage}V equipment.`,
+            'error'
+          );
+          return;
+        }
+      }
+
       const newEdge = {
         ...params,
         type: 'power',
@@ -144,7 +162,7 @@ export default function Canvas({ onInit }) {
       };
       addEdgeToStore(newEdge);
     },
-    [addEdgeToStore]
+    [addEdgeToStore, nodes, addToast]
   );
 
   const onNodeClick = useCallback(
@@ -290,12 +308,12 @@ export default function Canvas({ onInit }) {
         updatedNodes = updatedNodes.map((n) =>
           n.id === profileNodeId
             ? {
-                ...n,
-                position: {
-                  x: node.position.x,
-                  y: node.position.y + profileOffset,
-                },
-              }
+              ...n,
+              position: {
+                x: node.position.x,
+                y: node.position.y + profileOffset,
+              },
+            }
             : n
         );
         needsNodeUpdate = true;
@@ -334,12 +352,12 @@ export default function Canvas({ onInit }) {
             edges.map((edge) =>
               edge.id === edgeId
                 ? {
-                    ...edge,
-                    sourceHandle: 'profile-link',
-                    targetHandle: 'profile-link-target',
-                    type: 'relationship',
-                    selectable: false,
-                  }
+                  ...edge,
+                  sourceHandle: 'profile-link',
+                  targetHandle: 'profile-link-target',
+                  type: 'relationship',
+                  selectable: false,
+                }
                 : edge
             )
           );

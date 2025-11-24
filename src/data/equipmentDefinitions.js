@@ -149,7 +149,7 @@ export const equipmentDefinitions = {
     category: EQUIPMENT_CATEGORIES.END_EQUIPMENT,
     color: '#9CA3AF',
     defaultParameters: {
-      powerDraw: 5,
+      kwRating: 10, // Max Load per rack
       voltage: 208,
       current: 20,
       racksInRow: 1,

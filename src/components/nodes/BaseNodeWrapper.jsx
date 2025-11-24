@@ -8,7 +8,7 @@ import { EQUIPMENT_CATEGORIES } from '../../data/equipmentDefinitions';
 import DualPowerIndicator from './DualPowerIndicator';
 
 export default function BaseNodeWrapper({ id, data, selected, children, className = '' }) {
-  const { faultedNodes, toggleNodeFault, powerFlowMap } = useSimulationStore();
+  const { faultedNodes, toggleNodeFault, powerFlowMap, instantaneousLoadMap } = useSimulationStore();
   const { copyToClipboard } = useUIStore();
   const { removeNode, nodes } = useDiagramStore();
   const { addToast } = useToastStore();
@@ -107,7 +107,7 @@ export default function BaseNodeWrapper({ id, data, selected, children, classNam
             type="target"
             position={Position.Top}
             id={`input-${i}`}
-            className="w-3 h-3 border-2 border-gray-700 transition-colors hover:border-neon-cyan"
+            className="w-5 h-5 border-2 border-gray-700 transition-colors hover:border-neon-cyan rounded-full"
             style={{
               left: `${((i + 1) / (data.equipment.ports.input + 1)) * 100}%`,
               transform: 'translateX(-50%)',
@@ -129,11 +129,19 @@ export default function BaseNodeWrapper({ id, data, selected, children, classNam
 
           {/* Sub-label (Rating/Voltage) */}
           {(data.parameters?.voltage || data.parameters?.kvaRating || data.parameters?.kwRating) && (
-            <span className="text-[10px] text-gray-400 font-mono block">
-              {data.parameters?.kvaRating ? `${data.parameters.kvaRating}kVA` :
-                data.parameters?.kwRating ? `${data.parameters.kwRating}kW` :
-                  data.parameters?.voltage ? `${data.parameters.voltage}V` : ''}
-            </span>
+            <div className="flex flex-col items-center">
+              <span className="text-[10px] text-gray-400 font-mono block">
+                {data.parameters?.kvaRating ? `${data.parameters.kvaRating}kVA` :
+                  data.parameters?.kwRating ? `${data.parameters.kwRating}kW` :
+                    data.parameters?.voltage ? `${data.parameters.voltage}V` : ''}
+              </span>
+              {/* Instantaneous Load Display */}
+              {instantaneousLoadMap && instantaneousLoadMap.has(id) && (
+                <span className="text-[9px] text-neon-cyan font-mono block mt-0.5">
+                  {(instantaneousLoadMap.get(id) / 1000).toFixed(1)}kW
+                </span>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -187,7 +195,7 @@ export default function BaseNodeWrapper({ id, data, selected, children, classNam
             type="source"
             position={Position.Bottom}
             id={`output-${i}`}
-            className="w-3 h-3 border-2 border-gray-700 transition-colors hover:border-neon-green"
+            className="w-5 h-5 border-2 border-gray-700 transition-colors hover:border-neon-green rounded-full"
             style={{
               left: `${((i + 1) / (data.equipment.ports.output + 1)) * 100}%`,
               transform: 'translateX(-50%)',

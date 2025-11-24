@@ -5,19 +5,19 @@ import { useToastStore } from '../components/Layout/Toast';
 import { v4 as uuidv4 } from 'uuid';
 
 export function useKeyboardShortcuts() {
-  const { 
-    removeNode, 
+  const {
+    removeNode,
     removeEdge,
-    saveDiagram, 
-    nodes, 
+    saveDiagram,
+    nodes,
     edges,
     addNode,
     undo,
     redo,
   } = useDiagramStore();
-  const { 
-    selectedNodeId, 
-    selectedEdgeId, 
+  const {
+    selectedNodeId,
+    selectedEdgeId,
     clearSelection,
     selectNode,
     copyToClipboard,
@@ -62,8 +62,8 @@ export function useKeyboardShortcuts() {
       }
 
       // Ctrl/Cmd + Shift + Z or Ctrl/Cmd + Y - Redo
-      if (((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z') || 
-          ((e.ctrlKey || e.metaKey) && e.key === 'y')) {
+      if (((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z') ||
+        ((e.ctrlKey || e.metaKey) && e.key === 'y')) {
         e.preventDefault();
         redo();
         addToast('Redo', 'info');
@@ -100,21 +100,27 @@ export function useKeyboardShortcuts() {
             },
             data: {
               ...clipboard.data.data,
-              label: `${clipboard.data.data.label} (Copy)`,
+              label: clipboard.data.data.label,
             },
             parentNode: undefined, // Ensure no parent
             extent: undefined, // Clear any extent restrictions
           };
-          
+
+          // Fix for Server Nodes: Clear profileNodeId to prevent linking to the original node's profile
+          // This avoids an infinite loop where multiple servers try to position the same profile node
+          if (newNode.type === 'server' && newNode.data?.profileNodeId) {
+            delete newNode.data.profileNodeId;
+          }
+
           // Deselect all existing nodes before adding the new one
           const updatedNodes = nodes.map(node => ({
             ...node,
             selected: false
           }));
-          
+
           // Update all nodes to deselected state first
           useDiagramStore.setState({ nodes: updatedNodes });
-          
+
           // Then add the new node (which is already marked as selected)
           addNode(newNode);
           selectNode(newNodeId); // Update UI store selection
@@ -152,11 +158,11 @@ export function useKeyboardShortcuts() {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [
-    selectedNodeId, 
+    selectedNodeId,
     selectedEdgeId,
     nodes,
     edges,
-    removeNode, 
+    removeNode,
     removeEdge,
     clearSelection,
     selectNode,

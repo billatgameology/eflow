@@ -1,15 +1,18 @@
 import { useEffect } from 'react';
 import { useDiagramStore } from '../stores/useDiagramStore';
 import { useSimulationStore } from '../stores/useSimulationStore';
-import { calculatePowerFlow, extractPowerSources } from '../utils/powerFlowCalculator';
+import { calculatePowerFlow, extractPowerSources, calculateInstantaneousLoad } from '../utils/powerFlowCalculator';
 
 export function useSimulation() {
   const { nodes, edges, updateNode } = useDiagramStore();
   const {
     faultedNodes,
     faultedEdges,
+    simulationHour,
     setPowerFlowMap,
     setPowerSources,
+    setInstantaneousLoadMap,
+    instantaneousLoadMap,
   } = useSimulationStore();
 
   // Auto-calculate power flow whenever diagram changes
@@ -28,31 +31,40 @@ export function useSimulation() {
 
     setPowerFlowMap(flowMap);
 
+    // Calculate instantaneous load
+    const loadMap = calculateInstantaneousLoad(
+      nodes,
+      edges,
+      faultedNodes,
+      faultedEdges,
+      simulationHour
+    );
+    setInstantaneousLoadMap(loadMap);
+
     // Update power meter measurements
     nodes.forEach((node) => {
       if (node.type === 'powerMeter' && node.data?.parameters?.monitoredEdgeId) {
         const edgeId = node.data.parameters.monitoredEdgeId;
         const edge = edges.find(e => e.id === edgeId);
-        
+
         if (edge) {
           // Get power info from the source node
           const sourcePowerInfo = flowMap.get(edge.source);
           const targetNode = nodes.find(n => n.id === edge.target);
-          
+
           // Calculate measurements
           let current = 0;
           let voltage = 0;
-          
+
           if (sourcePowerInfo?.isPowered && targetNode) {
             // Get voltage from target node parameters
             voltage = targetNode.data?.parameters?.voltage || 208;
-            
+
             // Get current from target node parameters or calculate from power draw
-            current = targetNode.data?.parameters?.current || 
-                     (targetNode.data?.parameters?.powerDraw / (voltage / 1000)) || 
-                     0;
+            const powerWatts = loadMap.get(targetNode.id) || 0;
+            current = (powerWatts / voltage) || 0;
           }
-          
+
           // Update the power meter node with measurements
           const currentMeasurements = node.data?.measurements || {};
           if (currentMeasurements.current !== current || currentMeasurements.voltage !== voltage) {
@@ -70,5 +82,5 @@ export function useSimulation() {
         }
       }
     });
-  }, [nodes, edges, faultedNodes, faultedEdges, setPowerFlowMap, setPowerSources, updateNode]);
+  }, [nodes, edges, faultedNodes, faultedEdges, simulationHour, setPowerFlowMap, setPowerSources, setInstantaneousLoadMap, updateNode]);
 }
