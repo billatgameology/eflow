@@ -1,5 +1,7 @@
 import { useDiagramStore } from '../../stores/useDiagramStore';
 
+const EXPANSION_DELTA = 100;
+
 export default function AlignmentPanel({ selectedNodes }) {
     const { nodes, setNodes, saveToHistory } = useDiagramStore();
 
@@ -67,7 +69,7 @@ export default function AlignmentPanel({ selectedNodes }) {
         );
     };
 
-    const handleDistribute = (direction) => {
+    const handleDistribute = (direction, expandBy = 0) => {
         if (selectedNodes.length < 3) return;
 
         saveToHistory();
@@ -87,32 +89,46 @@ export default function AlignmentPanel({ selectedNodes }) {
             const lastNode = sortedNodes[sortedNodes.length - 1];
             const startX = firstNode.position.x;
             const endX = lastNode.position.x + (lastNode.width || 0);
+            const currentSpan = endX - startX;
+            const targetSpan = currentSpan + expandBy;
+            
+            let targetStart = startX;
+            let targetEnd = endX;
+
+            if (expandBy !== 0) {
+                const center = startX + currentSpan / 2;
+                targetStart = center - targetSpan / 2;
+                targetEnd = center + targetSpan / 2;
+            }
             
             // Calculate total width of all nodes
             const totalNodesWidth = sortedNodes.reduce((sum, node) => sum + (node.width || 0), 0);
             
             // Calculate total available space and gap
-            const totalSpace = endX - startX;
+            const totalSpace = targetEnd - targetStart;
             const totalGapSpace = totalSpace - totalNodesWidth;
             const gap = totalGapSpace / (sortedNodes.length - 1);
 
             // Build position map
             const positionMap = new Map();
-            let currentX = startX;
+            let currentX = targetStart;
             
             sortedNodes.forEach((node, index) => {
                 const nodeWidth = node.width || 0;
                 
-                if (index === 0 || index === sortedNodes.length - 1) {
-                    // Keep first and last nodes in place
-                    positionMap.set(node.id, node.position.x);
-                    if (index === 0) {
-                        currentX = startX + nodeWidth + gap;
-                    }
-                } else {
-                    positionMap.set(node.id, currentX);
-                    currentX = currentX + nodeWidth + gap;
+                if (index === 0) {
+                    positionMap.set(node.id, targetStart);
+                    currentX = targetStart + nodeWidth + gap;
+                    return;
                 }
+
+                if (index === sortedNodes.length - 1) {
+                    positionMap.set(node.id, targetEnd - nodeWidth);
+                    return;
+                }
+
+                positionMap.set(node.id, currentX);
+                currentX = currentX + nodeWidth + gap;
             });
             
             setNodes(
@@ -138,32 +154,46 @@ export default function AlignmentPanel({ selectedNodes }) {
             const lastNode = sortedNodes[sortedNodes.length - 1];
             const startY = firstNode.position.y;
             const endY = lastNode.position.y + (lastNode.height || 0);
+            const currentSpan = endY - startY;
+            const targetSpan = currentSpan + expandBy;
+
+            let targetStart = startY;
+            let targetEnd = endY;
+
+            if (expandBy !== 0) {
+                const center = startY + currentSpan / 2;
+                targetStart = center - targetSpan / 2;
+                targetEnd = center + targetSpan / 2;
+            }
             
             // Calculate total height of all nodes
             const totalNodesHeight = sortedNodes.reduce((sum, node) => sum + (node.height || 0), 0);
             
             // Calculate total available space and gap
-            const totalSpace = endY - startY;
+            const totalSpace = targetEnd - targetStart;
             const totalGapSpace = totalSpace - totalNodesHeight;
             const gap = totalGapSpace / (sortedNodes.length - 1);
 
             // Build position map
             const positionMap = new Map();
-            let currentY = startY;
+            let currentY = targetStart;
             
             sortedNodes.forEach((node, index) => {
                 const nodeHeight = node.height || 0;
                 
-                if (index === 0 || index === sortedNodes.length - 1) {
-                    // Keep first and last nodes in place
-                    positionMap.set(node.id, node.position.y);
-                    if (index === 0) {
-                        currentY = startY + nodeHeight + gap;
-                    }
-                } else {
-                    positionMap.set(node.id, currentY);
-                    currentY = currentY + nodeHeight + gap;
+                if (index === 0) {
+                    positionMap.set(node.id, targetStart);
+                    currentY = targetStart + nodeHeight + gap;
+                    return;
                 }
+
+                if (index === sortedNodes.length - 1) {
+                    positionMap.set(node.id, targetEnd - nodeHeight);
+                    return;
+                }
+
+                positionMap.set(node.id, currentY);
+                currentY = currentY + nodeHeight + gap;
             });
             
             setNodes(
@@ -297,6 +327,40 @@ export default function AlignmentPanel({ selectedNodes }) {
                             Select 3+ items to distribute
                         </p>
                     )}
+
+                    <div className="mt-4">
+                        <h4 className="text-xs text-gray-400 uppercase tracking-wide mb-3">
+                            Expand & Distribute (+100px)
+                        </h4>
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                onClick={() => handleDistribute('horizontal', EXPANSION_DELTA)}
+                                disabled={selectedNodes.length < 3}
+                                className="p-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded transition-colors flex flex-col items-center gap-1 disabled:opacity-30 disabled:cursor-not-allowed"
+                                title="Expand Horizontal Spacing"
+                            >
+                                <div className="flex gap-1 items-center">
+                                    <span className="w-1 h-3 bg-gray-400"></span>
+                                    <span className="w-4 h-px bg-gray-500"></span>
+                                    <span className="w-1 h-3 bg-gray-400"></span>
+                                </div>
+                                <span className="text-xs text-gray-300">Expand Horizontal</span>
+                            </button>
+                            <button
+                                onClick={() => handleDistribute('vertical', EXPANSION_DELTA)}
+                                disabled={selectedNodes.length < 3}
+                                className="p-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded transition-colors flex flex-col items-center gap-1 disabled:opacity-30 disabled:cursor-not-allowed"
+                                title="Expand Vertical Spacing"
+                            >
+                                <div className="flex flex-col gap-1 items-center">
+                                    <span className="h-1 w-3 bg-gray-400"></span>
+                                    <span className="h-4 w-px bg-gray-500"></span>
+                                    <span className="h-1 w-3 bg-gray-400"></span>
+                                </div>
+                                <span className="text-xs text-gray-300">Expand Vertical</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
