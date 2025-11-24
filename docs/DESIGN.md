@@ -1,476 +1,371 @@
-# eFlow - Electrical Single Line Diagram Designer
+# eFlow - Design Decisions & Architecture
 
 ## Project Overview
 
-eFlow is a modern, interactive web application for creating electrical single line diagrams commonly used in data centers. The application provides a visual, drag-and-drop interface for designing electrical distribution systems from substations down to IT servers, with real-time power flow simulation and fault analysis capabilities.
-
-## Tech Stack
-
-- **Framework**: React 18+ with Vite
-- **Diagram Library**: React Flow
-- **State Management**: Zustand
-- **Styling**: Tailwind CSS
-- **Data Persistence**: LocalStorage with JSON export/import
-- **Language**: JavaScript/TypeScript (recommended TypeScript)
-
-## Core Features
-
-### 1. Equipment Library Panel
-A sidebar panel containing draggable electrical equipment components:
-- **Power Generation**
-  - Utility Connection/Substation
-  - Generators
-  - UPS Systems
-
-- **Distribution Equipment**
-  - Transformers (step-down/step-up)
-  - Switchgear
-  - Circuit Breakers
-  - Automatic Transfer Switches (ATS)
-  - Static Transfer Switches (STS)
-
-- **Power Distribution**
-  - Main Distribution Panels
-  - PDUs (Power Distribution Units)
-  - Remote Power Panels (RPP)
-  - Busbars
-
-- **End Equipment**
-  - Server Racks
-  - IT Equipment
-  - HVAC Systems
-
-### 2. Drawing Canvas
-- **Black background** with neon-style equipment outlines
-- Infinite canvas with pan and zoom capabilities
-- Grid/snap-to-grid option for precise alignment
-- Equipment nodes with customizable parameters
-- Connectors/edges representing electrical connections
-
-### 3. Equipment Configuration
-Each equipment type has specific parameters:
-- **Common Properties**
-  - Name/Label
-  - Voltage Rating
-  - Current Rating
-  - Status (On/Off, Faulted)
-  - Position on canvas
-
-- **Specific Properties**
-  - Transformers: Primary/Secondary voltage, kVA rating
-  - Circuit Breakers: Trip rating, type (ACB, MCCB, MCB)
-  - UPS: Capacity, battery runtime
-  - Generators: kW capacity, fuel type
-  - PDUs: Input/output count, redundancy
-
-### 4. Power Flow Simulation
-- **Visual Power Tracing**
-  - Color-coded power sources (different colors for different sources)
-  - Animated flow indicators showing electricity direction
-  - Equipment status indicators (powered/unpowered)
-
-- **Redundancy Visualization**
-  - Multiple power sources shown with blended/alternating colors
-  - A/B power path differentiation
-  - Automatic failover path highlighting
-
-- **Fault Simulation**
-  - Click to toggle equipment/connection faults
-  - Real-time update of downstream affected equipment
-  - Visual indication of power loss propagation
-
-### 5. Data Persistence
-- **Auto-save** to localStorage
-- **Manual Save**: Named diagram saves
-- **Export**: Download diagram as JSON file
-- **Import**: Load diagram from JSON file
-- **Version tracking** for diagram iterations
-
-## Visual Design System
-
-### Color Palette
-```
-Background: #000000 (Pure Black)
-Equipment Outlines: #E5E7EB (Light Gray - Default)
-Active/Selected: #00FF9F (Neon Green)
-Fault/Error: #FF0055 (Neon Red)
-Warning: #FFD700 (Neon Gold)
-
-Power Source Colors:
-- Source A: #00D9FF (Cyan)
-- Source B: #FF00FF (Magenta)
-- Source C: #FFFF00 (Yellow)
-- Redundant: Gradient/Pulse between sources
-```
-
-### Visual Effects
-- **Neon Glow**: CSS drop-shadow and box-shadow for glow effects
-- **Hover States**: Subtle brightness increase + glow intensification
-- **Selection**: Strong neon outline with pulsing animation
-- **Power Flow**: Animated dashed lines or particle effects along connections
-- **Fault State**: Pulsing red glow
-- **Dual Power Source Indicator**: Equipment with 2 inputs shows a diagonal split with each half colored by its respective power source
-  - Square/rectangle divided by diagonal line
-  - Left/top half: Source A color
-  - Right/bottom half: Source B color
-  - Used for ATS, STS, dual-corded servers, and redundant equipment
-
-### Typography
-- **Headers**: Monospace, futuristic font (e.g., JetBrains Mono, Fira Code)
-- **Labels**: Sans-serif, clean and readable
-- **Equipment Text**: White/Light gray, high contrast on black
-
-## Data Structure
-
-### Diagram Schema
-```json
-{
-  "id": "diagram-uuid",
-  "name": "Main Data Center SLD",
-  "version": "1.0.0",
-  "createdAt": "2025-01-17T00:00:00Z",
-  "updatedAt": "2025-01-17T00:00:00Z",
-  "metadata": {
-    "author": "User Name",
-    "facility": "DC1",
-    "description": "Main electrical distribution"
-  },
-  "nodes": [
-    {
-      "id": "node-1",
-      "type": "transformer",
-      "position": { "x": 100, "y": 100 },
-      "data": {
-        "label": "TX-01",
-        "equipmentType": "transformer",
-        "parameters": {
-          "primaryVoltage": 13800,
-          "secondaryVoltage": 480,
-          "kvaRating": 2500,
-          "phases": 3
-        },
-        "status": "active",
-        "isFaulted": false
-      }
-    }
-  ],
-  "edges": [
-    {
-      "id": "edge-1",
-      "source": "node-1",
-      "target": "node-2",
-      "type": "power",
-      "data": {
-        "voltage": 480,
-        "isActive": true,
-        "isFaulted": false,
-        "powerSource": "sourceA"
-      }
-    }
-  ],
-  "simulation": {
-    "powerSources": [
-      {
-        "id": "sourceA",
-        "nodeId": "utility-1",
-        "color": "#00D9FF",
-        "label": "Utility A"
-      }
-    ]
-  }
-}
-```
-
-### Equipment Type Definitions
-```typescript
-interface EquipmentDefinition {
-  type: string;
-  category: 'generation' | 'distribution' | 'protection' | 'end-equipment';
-  icon: string; // SVG path or component
-  defaultParameters: Record<string, any>;
-  inputPorts: number;
-  outputPorts: number;
-  configSchema: ConfigField[];
-}
-```
-
-## State Management Architecture
-
-### Zustand Stores
-
-#### 1. Diagram Store
-```typescript
-interface DiagramStore {
-  // Diagram metadata
-  diagramId: string;
-  diagramName: string;
-  metadata: DiagramMetadata;
-
-  // React Flow state
-  nodes: Node[];
-  edges: Edge[];
-
-  // Actions
-  addNode: (node: Node) => void;
-  updateNode: (id: string, updates: Partial<Node>) => void;
-  removeNode: (id: string) => void;
-  addEdge: (edge: Edge) => void;
-  removeEdge: (id: string) => void;
-
-  // Persistence
-  saveDiagram: () => void;
-  loadDiagram: (id: string) => void;
-  exportDiagram: () => void;
-  importDiagram: (data: DiagramData) => void;
-}
-```
-
-#### 2. Simulation Store
-```typescript
-interface SimulationStore {
-  // Simulation state
-  isSimulating: boolean;
-  powerSources: PowerSource[];
-  powerFlowMap: Map<string, PowerFlow>;
-
-  // Actions
-  startSimulation: () => void;
-  stopSimulation: () => void;
-  toggleFault: (nodeId: string) => void;
-  calculatePowerFlow: () => void;
-  tracePowerPath: (nodeId: string) => string[];
-}
-```
-
-#### 3. UI Store
-```typescript
-interface UIStore {
-  // UI state
-  selectedNodeId: string | null;
-  selectedEdgeId: string | null;
-  isPanelOpen: boolean;
-  activeTab: 'equipment' | 'properties' | 'simulation';
-
-  // Actions
-  selectNode: (id: string) => void;
-  selectEdge: (id: string) => void;
-  togglePanel: () => void;
-  setActiveTab: (tab: string) => void;
-}
-```
-
-## Component Architecture
-
-### Layout Components
-```
-App
-├── Header (App title, save/load controls)
-├── Toolbar (Zoom, grid, simulation controls)
-├── EquipmentPanel (Draggable equipment library)
-├── Canvas (React Flow diagram area)
-├── PropertiesPanel (Selected equipment configuration)
-└── SimulationPanel (Power flow controls, fault injection)
-```
-
-### Custom Node Components
-Each equipment type gets a custom React Flow node:
-- `TransformerNode`
-- `CircuitBreakerNode`
-- `SwitchgearNode`
-- `UPSNode`
-- `GeneratorNode`
-- `PDUNode`
-- `ServerNode`
-- etc.
-
-### Custom Edge Components
-- `PowerEdge` - Animated power flow line
-- `FaultedEdge` - Red, disconnected state
-
-## Power Flow Algorithm
-
-### Basic Logic
-1. **Identify Power Sources**: Find all nodes marked as power sources (utility, generators)
-2. **Traverse Graph**: BFS/DFS from each source through edges
-3. **Mark Powered Nodes**: Track which nodes receive power and from which source
-4. **Handle Faults**: Skip faulted nodes/edges during traversal
-5. **Color Assignment**: Apply source color to all powered nodes
-6. **Redundancy Detection**: Nodes with multiple sources get special styling
-
-### Pseudocode
-```
-function calculatePowerFlow(diagram):
-  powerMap = new Map()
-
-  for each powerSource in diagram.powerSources:
-    visited = new Set()
-    queue = [powerSource.nodeId]
-
-    while queue not empty:
-      currentNode = queue.shift()
-
-      if currentNode is faulted:
-        continue
-
-      powerMap.set(currentNode, {
-        sources: [...existing, powerSource],
-        color: powerSource.color
-      })
-
-      for each edge from currentNode:
-        if edge not faulted and target not visited:
-          queue.push(edge.target)
-          visited.add(edge.target)
-
-  return powerMap
-```
-
-## User Interactions
-
-### Drag and Drop Workflow
-1. User clicks equipment from panel
-2. Drag onto canvas
-3. On drop, create new node at cursor position
-4. Open properties panel for configuration
-
-### Connection Creation
-1. Click source node output port
-2. Drag to target node input port
-3. Create edge with default properties
-4. Validate connection (e.g., voltage compatibility)
-
-### Equipment Configuration
-1. Click node to select
-2. Properties panel opens on right
-3. Edit parameters in form
-4. Changes auto-save and trigger simulation update
-
-### Fault Simulation
-1. Right-click node or edge
-2. Context menu: "Inject Fault" / "Clear Fault"
-3. Visual update: Red glow, power flow recalculation
-4. Downstream equipment shows unpowered state
-
-## File Structure
-```
-eflow/
-├── public/
-├── src/
-│   ├── components/
-│   │   ├── Canvas/
-│   │   │   ├── Canvas.jsx
-│   │   │   └── Canvas.module.css
-│   │   ├── EquipmentPanel/
-│   │   │   ├── EquipmentPanel.jsx
-│   │   │   ├── EquipmentItem.jsx
-│   │   │   └── equipmentDefinitions.js
-│   │   ├── Header/
-│   │   ├── Toolbar/
-│   │   ├── PropertiesPanel/
-│   │   ├── SimulationPanel/
-│   │   └── nodes/
-│   │       ├── TransformerNode.jsx
-│   │       ├── CircuitBreakerNode.jsx
-│   │       ├── PDUNode.jsx
-│   │       └── ...
-│   ├── stores/
-│   │   ├── useDiagramStore.js
-│   │   ├── useSimulationStore.js
-│   │   └── useUIStore.js
-│   ├── utils/
-│   │   ├── powerFlowCalculator.js
-│   │   ├── diagramValidator.js
-│   │   ├── exportImport.js
-│   │   └── localStorage.js
-│   ├── types/
-│   │   └── index.ts (if using TypeScript)
-│   ├── styles/
-│   │   └── globals.css
-│   ├── App.jsx
-│   └── main.jsx
-├── package.json
-├── vite.config.js
-├── tailwind.config.js
-└── README.md
-```
-
-## Performance Considerations
-
-1. **Canvas Optimization**
-   - Use React Flow's built-in virtualization
-   - Limit max nodes (warn at 500+)
-   - Debounce auto-save operations
-
-2. **Power Flow Calculation**
-   - Only recalculate on topology changes or fault events
-   - Cache results for repeated queries
-   - Use memoization for complex derivations
-
-3. **Rendering**
-   - SVG for simple equipment shapes
-   - Canvas for complex animations (if needed)
-   - CSS transforms for smooth interactions
-
-## Future Enhancements (Post-MVP)
-
-- [ ] Multi-page diagrams (linked diagrams)
-- [ ] Equipment templates and libraries
-- [ ] Collaborative editing (real-time with WebSocket)
-- [ ] Advanced calculations (load flow, voltage drop)
-- [ ] PDF/PNG export with annotations
-- [ ] Equipment search and filtering
-- [ ] Undo/Redo with history
-- [ ] Keyboard shortcuts
-- [ ] Custom equipment creation
-- [ ] Cloud storage integration
-
-## Development Phases
-
-### Phase 1: Foundation (Week 1-2)
-- Project setup with Vite + React
-- Install dependencies (React Flow, Zustand, Tailwind)
-- Basic layout and component structure
-- Initial Zustand stores
-
-### Phase 2: Core Diagram Features (Week 3-4)
-- Equipment panel with 5-6 basic equipment types
-- Drag and drop functionality
-- Node and edge creation/deletion
-- Properties panel for basic configuration
-
-### Phase 3: Visual Design (Week 5)
-- Implement neon/futuristic styling
-- Custom node designs for each equipment type
-- Hover, selection, and glow effects
-- Responsive layout
-
-### Phase 4: Power Flow Simulation (Week 6-7)
-- Power flow calculation algorithm
-- Color-coded power source visualization
-- Animated power flow on edges
-- Fault injection and propagation
-
-### Phase 5: Persistence (Week 8)
-- LocalStorage auto-save
-- JSON export/import
-- Diagram management (save, load, delete)
-
-### Phase 6: Polish & Testing (Week 9-10)
-- Bug fixes and edge cases
-- Performance optimization
-- User testing and feedback
-- Documentation
-
-## Success Metrics
-
-- **Usability**: User can create a basic SLD in < 5 minutes
-- **Performance**: Smooth 60fps interaction with 100+ nodes
-- **Reliability**: No data loss with auto-save
-- **Visual Appeal**: Distinct futuristic neon aesthetic
-- **Functionality**: Accurate power flow simulation for common scenarios
+eFlow is an interactive electrical single-line diagram designer for datacenter power distribution systems. This document captures the key design decisions and architectural choices made during development.
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: 2025-01-17
-**Author**: eFlow Team
+## Design Philosophy
+
+### Core Principles
+
+1. **Realism First**: Simulate actual electrical behavior accurately
+2. **Visual Clarity**: Use color coding and animations to communicate system state
+3. **User Safety**: Prevent invalid configurations through validation
+4. **Predictable Behavior**: Equipment should behave like real-world counterparts
+
+---
+
+## Power Flow Architecture
+
+### Design Decision: Top-Down Power, Bottom-Up Load
+
+**Rationale:**
+- **Power Flow (Top-Down)**: Electricity flows from sources (utility/generator) downstream through distribution equipment to loads
+- **Load Calculation (Bottom-Up)**: Loads are calculated from servers upward, aggregating at each distribution point
+
+**Implementation:**
+- `calculatePowerFlow()`: BFS traversal from power sources, marking `isPowered` flag
+- `calculateInstantaneousLoad()`: Recursive calculation starting from servers, propagating upstream
+
+**Why Two Separate Calculations?**
+- Power presence is binary (on/off) and depends on topology
+- Load is continuous (0-100%) and depends on utilization profiles
+- Separating them allows independent optimization and clearer logic
+
+### Design Decision: Power-Aware Load Calculation
+
+**Problem:** Servers were calculating load even when unpowered, causing unrealistic displays
+
+**Solution:** Pass `powerFlowMap` to `calculateInstantaneousLoad()` and check `isPowered` before calculating server loads
+
+**Impact:**
+- When upstream equipment faults, all downstream loads immediately show 0kW
+- Matches real-world behavior where unpowered equipment draws no load
+- Prevents confusion about "phantom loads"
+
+---
+
+## Overload Protection System
+
+### Design Decision: Protection at Distribution Level Only
+
+**Equipment Protected:**
+- ✅ Circuit Breakers
+- ✅ Switchgear
+- ❌ Servers (loads don't trip themselves)
+- ❌ Transformers (simplified - would require thermal modeling)
+
+**Rationale:**
+- Mirrors real datacenter design where protection is at distribution points
+- Servers don't have built-in circuit protection that trips the electrical path
+- Keeps simulation simple while maintaining accuracy
+
+### Design Decision: 5% Tolerance Buffer
+
+**Implementation:** Equipment faults at **105% of rated capacity**, not 100%
+
+**Rationale:**
+- Prevents edge-case false positives at exactly rated capacity
+- Matches real-world breakers which have slight trip margins
+- Gives users breathing room when managing loads
+- Prevents immediate re-fault when clearing a fault
+
+### Design Decision: Manual Reset Only
+
+**Alternative Considered:** Auto-recovery when load drops below threshold
+
+**Choice:** Manual reset via fault button
+
+**Rationale:**
+- Real circuit breakers require manual reset for safety
+- Forces users to identify and fix the root cause
+- Prevents automatic reclosure into fault conditions
+- More educational for understanding datacenter operations
+
+---
+
+## Load Profile Integration
+
+### Design Decision: Internal Storage vs External Nodes
+
+**Implementation:** Load profile data stored in `server.data.loadProfile`, not in separate visualization nodes
+
+**Rationale:**
+- Load profile is a property of the server, not a separate entity
+- Simplifies copy/paste operations (no orphaned profile nodes)
+- Clearer data ownership and lifecycle management
+
+**Compromise:** External `LoadProfileNode` remains for **visualization only**, reading from internal data
+
+### Design Decision: Shared Interpolation Function
+
+**Problem:** Load profile interpolation was duplicated in multiple files
+
+**Solution:** Created `interpolateValueAtHour()` in `loadProfile.js`
+
+**Benefits:**
+- Single source of truth for interpolation logic
+- Consistent behavior across simulation and visualization
+- Easier to debug and maintain
+
+---
+
+## Visual Design System
+
+### Design Decision: Standardized Color Scheme
+
+**Electrical Measurements:**
+- **Voltage (V)**: Grey (#9CA3AF)
+- **Current (A)**: Green (#00FF9F)
+- **Power (kW)**: Cyan (#00D9FF)
+
+**Rationale:**
+- Consistent color = faster user comprehension
+- Industry convention: Green often represents "good/normal" (current)
+- Cyan stands out for the most critical metric (power)
+
+### Design Decision: Icon Redesign for Clarity
+
+**Approach:** Converted icons from generic shapes to electrical schematic symbols
+
+**Examples:**
+- **Switchgear**: Main busbar with multiple breaker outputs (shows distribution function)
+- **Transformer**: Overlapping circles (standard IEEE symbol)
+- **PDU**: Cabinet with rows of breakers (shows physical form)
+- **Utility**: Transmission tower (instantly recognizable)
+
+**Rationale:**
+- Users familiar with electrical drawings can quickly identify equipment
+- Reduces cognitive load compared to abstract shapes
+- More professional appearance
+
+### Design Decision: White vs Green for Powered Equipment
+
+**Rule:**
+- **Utility**: Remains source color (cyan) - it's the power source
+- **Distribution Equipment**: White when powered - they're just conduits
+- **Loads**: Show actual load in cyan - they're consuming power
+
+**Rationale:**
+- Reduces visual noise (not everything glowing green)
+- Focuses attention on actual power consumption (loads)
+- Utility color helps trace power source
+
+---
+
+## Animation & Feedback
+
+### Design Decision: Normalized Edge Animation Speed
+
+**Problem:** Fixed 2-second animation made short edges look slow, long edges look fast
+
+**Solution:** Calculate duration based on edge length: `duration = length / 100px/s`
+
+**Rationale:**
+- Constant visual velocity is less jarring
+- Users can "see" electricity flowing at consistent speed
+- Feels more realistic
+
+**Trade-off:** Very long edges may have slow animations, but this is acceptable for visual continuity
+
+---
+
+## User Interaction Patterns
+
+### Design Decision: No "(Copy)" Suffix on Paste
+
+**Rationale:**
+- Each node has a unique internal ID already
+- Custom labels are user-entered data, should preserve exactly
+- Users can manually rename if they want differentiation
+- Reduces friction in rapid prototyping
+
+### Design Decision: Voltage Mismatch Prevention
+
+**Implementation:** Block connections between nodes with different voltages
+
+**Rationale:**
+- Prevents unrealistic configurations
+- Educates users about electrical compatibility
+- Reduces user errors in complex diagrams
+
+**Exception:** Transformers explicitly handle voltage changes
+
+---
+
+## Data Architecture
+
+### Design Decision: Server `kwRating` Represents Per-Rack Maximum
+
+**Implementation:**
+- `kwRating`: Maximum load per individual rack (e.g., 10kW)
+- `racksInRow`: Number of racks in the row (e.g., 5)
+- **Total capacity**: `kwRating × racksInRow` (e.g., 50kW)
+
+**Rationale:**
+- Matches how datacenters specify server equipment
+- Allows easy scaling by adjusting rack count
+- Overload check correctly multiplies rating by rack count
+
+### Design Decision: Faulted Nodes Block Load Propagation
+
+**Implementation:**
+- Skip faulted nodes when calculating upstream loads
+- Skip edges from faulted source nodes
+- Skip faulted consumer nodes
+
+**Impact:**
+- When switchgear faults, it shows 0kW (can't measure through open circuit)
+- All upstream equipment also show 0kW (no load is being pulled)
+- Matches real-world behavior of open circuits
+
+---
+
+## Simulation Logic
+
+### Design Decision: Dual Parameter Names for Amperage
+
+**Problem:** Circuit breakers use `current`, switchgear uses `ampRating`
+
+**Solution:** Check for both: `node.data?.parameters?.current || node.data?.parameters?.ampRating`
+
+**Rationale:**
+- Legacy equipment definitions had inconsistent naming
+- Both are semantically valid
+- Checking both prevents breaking existing diagrams
+- Migration to consistent naming can happen later
+
+### Design Decision: Default Voltage Fallback to 120V
+
+**Used When:** Calculating amperage from watts if voltage is missing
+
+**Rationale:**
+- 120V is common for North American single-phase
+- Better to have approximate calculation than crash
+- Encourages users to set proper voltage (inaccurate results signal missing data)
+
+---
+
+## Performance Optimizations
+
+### Design Decision: Skip Already-Faulted Nodes in Overload Check
+
+**Implementation:**
+```javascript
+if (faultedNodes.has(node.id)) return;
+```
+
+**Rationale:**
+- Node is already faulted, no need to re-fault it
+- Reduces unnecessary state updates
+- Prevents potential infinite loops
+
+### Design Decision: Iterative Convergence for Load Calculation
+
+**Why Iterative?**
+- Electrical graphs can have complex topologies including loops
+- Bottom-up recursion risks infinite loops in cyclic graphs
+- 10 iterations is sufficient for typical datacenter depth (5-7 levels)
+
+**Trade-off:** 
+- Slightly less efficient than pure topological sort
+- Much simpler to implement and debug
+- Performance is acceptable for diagrams <500 nodes
+
+---
+
+## File Organization
+
+### Stores (Zustand)
+
+**`useSimulationStore.js`**
+- Simulation state: `isSimulating`, `simulationHour`, `faultedNodes`, `faultedEdges`
+- Power flow results: `powerFlowMap`, `instantaneousLoadMap`
+- Actions: `startSimulation()`, `toggleNodeFault()`, **`addNodeFault()`**
+
+**`useDiagramStore.js`**
+- Diagram data: `nodes`, `edges`
+- CRUD operations: `addNode()`, `updateNode()`, `removeNode()`, etc.
+- Persistence: `saveDiagram()`, `loadDiagram()`
+
+**`useUIStore.js`**
+- UI state: `selectedNodeId`, `selectedEdgeId`, `clipboard`
+- View settings: `gridType`, `snapToGrid`, `showLoadProfileOverlays`
+
+### Utils
+
+**`powerFlowCalculator.js`**
+- `calculatePowerFlow()`: Determines which nodes are powered (BFS traversal)
+- `calculateInstantaneousLoad()`: Calculates kW loads (bottom-up recursion)
+- `extractPowerSources()`: Finds all power source nodes
+
+**`loadProfile.js`**
+- `createDefaultLoadProfile()`: Factory for new profiles
+- **`interpolateValueAtHour()`**: Shared interpolation logic (linear between points)
+- `cloneLoadProfile()`: Deep copy for modifications
+
+---
+
+## Testing & Validation
+
+### Verified Behaviors
+
+✅ **Overload protection triggers at 105% capacity**
+- Tested with switchgear rated 4000A @ 480V
+- Faults correctly when downstream load exceeds threshold
+
+✅ **Faulted equipment blocks all downstream power**
+- Power flow stops (animations halt)
+- Load propagation stops (0kW shown)
+- Servers show 0kW when unpowered
+
+✅ **Load profiles correctly interpolate**
+- Yellow indicator tracks load profile graph
+- Server kW matches expected: `kwRating × utilization × racksInRow`
+
+✅ **Copy/paste works during simulation**
+- No crashes when pasting servers
+- Profile nodes properly cleared
+
+✅ **Voltage mismatch prevention**
+- Toast notification on attempted invalid connection
+- No crashes from type errors
+
+---
+
+## Known Limitations & Future Work
+
+### Current Simplifications
+
+1. **No Voltage Drop Calculation**: All equipment at same voltage level treated as equal voltage
+2. **No Thermal Models**: Transformers/cables don't have thermal limits, only amperage
+3. **Simplified Power Factor**: Assumes unity power factor (kW = kVA)
+4. **No Harmonic Analysis**: Doesn't model non-linear loads
+5. **No Short Circuit Analysis**: Only overload protection, not fault current calculations
+
+### Potential Enhancements
+
+- [ ] Add transformer thermal overload protection
+- [ ] Implement power factor correction modeling
+- [ ] Add cable ampacity checking based on length/type
+- [ ] Support more sophisticated trip curves (inverse time, instantaneous)
+- [ ] Add historical load tracking/graphing
+- [ ] Multi-tier load profiles (seasonal, weekly, daily)
+
+---
+
+## Design Principles Summary
+
+1. **Accuracy Over Complexity**: Model real behavior, but only what users need
+2. **Visual Feedback First**: Users should see state changes immediately
+3. **Fail Safe**: Block invalid operations rather than allow bad state
+4. **Consistency**: Same behavior across all similar equipment types
+5. **Predictability**: Equipment behaves as users expect from real-world experience
+
+---
+
+**Document Version**: 2.0  
+**Last Updated**: 2025-11-23  
+**Primary Contributors**: Development Team
