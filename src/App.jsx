@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import MainLayout from './components/Layout/MainLayout';
 import { useSimulation } from './hooks/useSimulation';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -14,9 +14,17 @@ function App() {
 
   const { diagramId, diagramName, nodes, edges, metadata } = useDiagramStore();
 
+  // Use ref to access latest state inside interval without resetting it
+  const diagramRef = useRef({ diagramId, diagramName, nodes, edges, metadata });
+
+  useEffect(() => {
+    diagramRef.current = { diagramId, diagramName, nodes, edges, metadata };
+  }, [diagramId, diagramName, nodes, edges, metadata]);
+
   // Auto-save every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
+      const { diagramId, diagramName, nodes, edges, metadata } = diagramRef.current;
       const diagram = {
         id: diagramId,
         name: diagramName,
@@ -28,7 +36,7 @@ function App() {
     }, 30000); // 30 seconds
 
     return () => clearInterval(interval);
-  }, [diagramId, diagramName, nodes, edges, metadata]);
+  }, []); // Empty dependency array ensures interval is set only once
 
   return <MainLayout />;
 }

@@ -160,8 +160,15 @@ export function calculateInstantaneousLoad(nodes, edges, faultedNodes, faultedEd
   // Simple approach: Repeatedly propagate load to parents until stable or max iterations.
   // Given the depth is shallow (Server -> PDU -> UPS -> Switchgear -> Utility), 10 iterations is plenty.
 
-  for (let i = 0; i < 10; i++) {
-    let changed = false;
+  // 2. Propagate Load Upstream (Bottom-Up)
+  // We iterate until convergence or max iterations.
+  const MAX_ITERATIONS = 20;
+  let iterations = 0;
+  let converged = false;
+
+  while (!converged && iterations < MAX_ITERATIONS) {
+    iterations++;
+    converged = true; // Assume converged unless we find a change
 
     // Create a temporary map for this iteration to avoid double counting if we processed in wrong order
     // Actually, we can just accumulate.
@@ -199,7 +206,7 @@ export function calculateInstantaneousLoad(nodes, edges, faultedNodes, faultedEd
     // But we need to do it in reverse topological order.
     // Since we don't have that handy, we'll just loop until convergence.
 
-    const currentIterationMap = new Map(loadMap); // Start with server loads
+    const previousLoadMap = new Map(loadMap);
 
     // We need to calculate the load for non-server nodes based on what they supply
     // This is tricky with loops, but we assume DAG.
@@ -278,7 +285,13 @@ export function calculateInstantaneousLoad(nodes, edges, faultedNodes, faultedEd
       // The recursive function is expensive if called for every node blindly.
       // But for < 100 nodes it's fine.
       if (node.type !== 'server') {
-        loadMap.set(node.id, calculateNodeLoad(node.id));
+        const newLoad = calculateNodeLoad(node.id);
+        const oldLoad = previousLoadMap.get(node.id) || 0;
+
+        if (Math.abs(newLoad - oldLoad) > 0.1) { // 0.1W tolerance
+          converged = false;
+        }
+        loadMap.set(node.id, newLoad);
       }
     });
 

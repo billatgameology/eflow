@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useDiagramStore } from '../stores/useDiagramStore';
 import { useSimulationStore } from '../stores/useSimulationStore';
 import { calculatePowerFlow, extractPowerSources, calculateInstantaneousLoad } from '../utils/powerFlowCalculator';
@@ -16,8 +16,38 @@ export function useSimulation() {
     addNodeFault,
   } = useSimulationStore();
 
+  const lastSignatureRef = useRef('');
+
   // Auto-calculate power flow whenever diagram changes
   useEffect(() => {
+    // Create a signature that only includes electrically relevant data
+    // We explicitly exclude 'position', 'selected', 'dragging' (top level)
+    // And 'measurements' from data (to prevent infinite loops when we update them)
+    const relevantNodes = nodes.map(n => ({
+      id: n.id,
+      type: n.type,
+      // Only include data parameters that affect simulation
+      data: {
+        ...n.data,
+        measurements: undefined, // Exclude output to prevent loops
+        // We need parameters, equipment, label, etc.
+      }
+    }));
+
+    const signature = JSON.stringify({
+      nodes: relevantNodes,
+      edges,
+      faultedNodes: Array.from(faultedNodes).sort(),
+      faultedEdges: Array.from(faultedEdges).sort(),
+      simulationHour
+    });
+
+    // If signature hasn't changed, skip calculation
+    if (signature === lastSignatureRef.current) {
+      return;
+    }
+    lastSignatureRef.current = signature;
+
     // Extract power sources
     const sources = extractPowerSources(nodes);
     setPowerSources(sources);
@@ -106,7 +136,12 @@ export function useSimulation() {
 
           // Update the power meter node with measurements
           const currentMeasurements = node.data?.measurements || {};
-          if (currentMeasurements.current !== current || currentMeasurements.voltage !== voltage) {
+          // Use a small epsilon for float comparison to avoid thrashing
+          const epsilon = 0.001;
+          const currentChanged = Math.abs((currentMeasurements.current || 0) - current) > epsilon;
+          const voltageChanged = Math.abs((currentMeasurements.voltage || 0) - voltage) > epsilon;
+
+          if (currentChanged || voltageChanged) {
             updateNode(node.id, {
               data: {
                 ...node.data,
@@ -121,5 +156,5 @@ export function useSimulation() {
         }
       }
     });
-  }, [nodes, edges, faultedNodes, faultedEdges, simulationHour, setPowerFlowMap, setPowerSources, setInstantaneousLoadMap, updateNode]);
+  }, [nodes, edges, faultedNodes, faultedEdges, simulationHour, setPowerFlowMap, setPowerSources, setInstantaneousLoadMap, updateNode, addNodeFault]);
 }
