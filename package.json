@@ -1,7 +1,7 @@
 {
   "name": "eflow",
   "version": "1.0.0",
-  "description": "",
+  "description": "Interactive electrical single-line diagram designer for datacenter power distribution systems",
   "main": "index.js",
   "scripts": {
     "dev": "vite",
@@ -12,9 +12,19 @@
     "type": "git",
     "url": "git+https://github.com/billatgameology/eflow.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "electrical-engineering",
+    "datacenter",
+    "power-distribution",
+    "single-line-diagram",
+    "power-flow",
+    "react",
+    "reactflow",
+    "simulation",
+    "electrical-design"
+  ],
+  "author": "billatgameology",
+  "license": "MIT",
   "type": "module",
   "bugs": {
     "url": "https://github.com/billatgameology/eflow/issues"
