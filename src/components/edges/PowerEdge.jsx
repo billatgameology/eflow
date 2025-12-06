@@ -19,11 +19,16 @@ export default function PowerEdge({
   target,
   source,
   selected,
+  targetHandleId,
 }) {
   const { faultedEdges, toggleEdgeFault, powerFlowMap } = useSimulationStore();
-  const { nodes, removeEdge, addNode } = useDiagramStore();
+  const { nodes, edges, removeEdge, addNode } = useDiagramStore();
   const isFaulted = faultedEdges.has(id);
   const [isHovered, setIsHovered] = useState(false);
+
+  // Get the actual edge to access targetHandle
+  const currentEdge = edges.find(e => e.id === id);
+  const edgeTargetHandle = currentEdge?.targetHandle || targetHandleId || 'input-0';
 
   // Use smooth step path for 90-degree angled connections
   const [edgePath, labelX, labelY] = getSmoothStepPath({
@@ -39,8 +44,59 @@ export default function PowerEdge({
   // Determine edge color based on power flow
   // Get the source node's power info to determine the edge color
   const sourceNode = source ? nodes.find(n => n.id === source) : null;
+  const targetNode = target ? nodes.find(n => n.id === target) : null;
   const sourcePowerInfo = source ? powerFlowMap.get(source) : null;
   const targetPowerInfo = target ? powerFlowMap.get(target) : null;
+
+  // Check if this edge is actually flowing power
+  // For edges going into transfer switches, only the active input flows power
+  const isFlowingPower = (() => {
+    if (!sourcePowerInfo?.isPowered || isFaulted) return false;
+    
+    // Check if target is a transfer switch
+    if (targetNode?.type === 'ats' || targetNode?.type === 'mts') {
+      // Use the edgeTargetHandle we retrieved from the current edge
+      const thisEdgeHandle = edgeTargetHandle;
+      
+      // Determine which handle should be active
+      let activeHandle = null;
+      
+      if (targetNode.type === 'ats') {
+        // ATS: primary (input-0) is preferred, secondary (input-1) only if primary has no power
+        // Check power on each input by looking at incoming edges
+        const incomingEdges = edges.filter(e => e.target === target);
+        const primaryEdge = incomingEdges.find(e => (e.targetHandle || 'input-0') === 'input-0');
+        const secondaryEdge = incomingEdges.find(e => e.targetHandle === 'input-1');
+        
+        const primarySourcePower = primaryEdge ? powerFlowMap.get(primaryEdge.source)?.isPowered : false;
+        const secondarySourcePower = secondaryEdge ? powerFlowMap.get(secondaryEdge.source)?.isPowered : false;
+        
+        if (primarySourcePower) {
+          activeHandle = 'input-0';
+        } else if (secondarySourcePower) {
+          activeHandle = 'input-1';
+        }
+      } else if (targetNode.type === 'mts') {
+        // MTS: based on manual selection
+        const manualSelection = targetNode.data?.parameters?.selectedSource ?? 0;
+        const selectedHandle = manualSelection === 0 ? 'input-0' : 'input-1';
+        
+        // Check if selected source has power
+        const incomingEdges = edges.filter(e => e.target === target);
+        const selectedEdge = incomingEdges.find(e => (e.targetHandle || 'input-0') === selectedHandle);
+        const selectedHasPower = selectedEdge ? powerFlowMap.get(selectedEdge.source)?.isPowered : false;
+        
+        if (selectedHasPower) {
+          activeHandle = selectedHandle;
+        }
+      }
+      
+      // Only flow power if this edge is the active input
+      return thisEdgeHandle === activeHandle;
+    }
+    
+    return true; // Non-transfer-switch targets always flow if source is powered
+  })();
 
   // Edge is powered if source is powered and edge is not faulted
   const isPowered = sourcePowerInfo?.isPowered && !isFaulted;
@@ -51,7 +107,7 @@ export default function PowerEdge({
 
   if (isFaulted) {
     edgeColor = '#FF0055';
-  } else if (isPowered) {
+  } else if (isFlowingPower) {
     // Check if source is a transfer switch with an active source
     if ((sourceNode?.type === 'ats' || sourceNode?.type === 'mts') && sourcePowerInfo?.activeSource) {
       edgeColor = sourcePowerInfo.activeSource.color;
@@ -60,7 +116,7 @@ export default function PowerEdge({
     }
   }
 
-  const strokeWidth = isFaulted ? 3 : isPowered ? 2.5 : 1.5;
+  const strokeWidth = isFaulted ? 3 : isFlowingPower ? 2.5 : 1.5;
 
   // Calculate filter for glow effect
   const getFilter = () => {
@@ -70,7 +126,7 @@ export default function PowerEdge({
     if (isFaulted) {
       return 'drop-shadow(0 0 4px #FF0055)';
     }
-    if (isPowered) {
+    if (isFlowingPower) {
       return `drop-shadow(0 0 4px ${edgeColor})`;
     }
     return 'none';
@@ -138,8 +194,8 @@ export default function PowerEdge({
         style={{ pointerEvents: 'stroke', cursor: 'pointer' }}
       />
 
-      {/* Animated flow particles - only when powered */}
-      {isPowered && !isFaulted && (
+      {/* Animated flow particles - only when power is flowing through this edge */}
+      {isFlowingPower && !isFaulted && (
         (() => {
           // Calculate approximate path length (Manhattan distance)
           const length = Math.abs(sourceX - targetX) + Math.abs(sourceY - targetY);
