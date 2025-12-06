@@ -9,20 +9,22 @@ function findPrimaryAndSecondarySources(sources) {
     return { primary: null, secondary: null };
   }
   
-  // First try to find by explicit targetHandle
-  let primary = sources.find(s => (s.targetHandle || 'input-0') === 'input-0');
+  // Find by explicit targetHandle
+  // Default to input-0 if handle is missing
+  let primary = sources.find(s => s.targetHandle === 'input-0' || !s.targetHandle);
   let secondary = sources.find(s => s.targetHandle === 'input-1');
   
-  // If we have 2 sources but couldn't find secondary by handle, use the other one
-  if (!secondary && sources.length > 1 && primary) {
-    secondary = sources.find(s => s !== primary);
-  }
-  
-  // If we have 2 sources but couldn't find primary (both have non-standard handles)
-  if (!primary && sources.length >= 1) {
-    primary = sources[0];
+  // If we found the same source for both (e.g. it had no handle), and we have multiple sources,
+  // try to disambiguate.
+  if (primary && secondary && primary === secondary) {
+    // This shouldn't happen if handles are set correctly, but just in case:
+    // If we have >1 sources, assume the second one is secondary
     if (sources.length > 1) {
-      secondary = sources[1];
+      secondary = sources.find(s => s !== primary);
+    } else {
+      // Only 1 source, and it matched both? 
+      // If it has no handle, we assumed primary. So unset secondary.
+      secondary = null;
     }
   }
   

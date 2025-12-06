@@ -7,15 +7,19 @@ import { useDiagramStore } from '../../stores/useDiagramStore';
 function findPrimaryAndSecondary(sources) {
     if (!sources || sources.length === 0) return { primary: null, secondary: null };
     
-    let primary = sources.find(s => (s.targetHandle || 'input-0') === 'input-0');
+    // Find by explicit targetHandle
+    // Default to input-0 if handle is missing
+    let primary = sources.find(s => s.targetHandle === 'input-0' || !s.targetHandle);
     let secondary = sources.find(s => s.targetHandle === 'input-1');
     
-    if (!secondary && sources.length > 1 && primary) {
-        secondary = sources.find(s => s !== primary);
-    }
-    if (!primary && sources.length >= 1) {
-        primary = sources[0];
-        if (sources.length > 1) secondary = sources[1];
+    // If we found the same source for both (e.g. it had no handle), and we have multiple sources,
+    // try to disambiguate.
+    if (primary && secondary && primary === secondary) {
+        if (sources.length > 1) {
+            secondary = sources.find(s => s !== primary);
+        } else {
+            secondary = null;
+        }
     }
     
     return { primary, secondary };

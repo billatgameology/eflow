@@ -127,8 +127,14 @@ export function useSimulation() {
           let voltage = 0;
 
           if (sourcePowerInfo?.isPowered && targetNode) {
-            // Get voltage from target node parameters
-            voltage = targetNode.data?.parameters?.voltage || 208;
+            // Get voltage from source node (output voltage)
+            // Transformers and PDUs output their secondary voltage
+            if (sourceNode.type === 'transformer' || sourceNode.type === 'pdu') {
+              voltage = sourceNode.data?.parameters?.secondaryVoltage || 208;
+            } else {
+              // Other equipment outputs their configured voltage
+              voltage = sourceNode.data?.parameters?.voltage || 208;
+            }
 
             // Get power draw - for edges going into transfer switches, 
             // only show load if this edge is the active input

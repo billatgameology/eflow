@@ -18,7 +18,6 @@ import { edgeTypes } from '../edges/edgeTypes';
 import { cloneLoadProfile } from '../../utils/loadProfile';
 
 const BASE_PROFILE_OFFSET = 160;
-const RACK_HEIGHT_INCREMENT = 4;
 
 export default function Canvas({ onInit }) {
   const {
@@ -64,12 +63,7 @@ export default function Canvas({ onInit }) {
 
             const movedNode = nodes.find((node) => node.id === change.id);
             if (movedNode?.type === 'server' && movedNode.data?.profileNodeId) {
-              const racksInRow = Math.min(
-                Math.max(movedNode.data?.parameters?.racksInRow || 1, 1),
-                40
-              );
-              const additionalOffset = Math.max(racksInRow - 10, 0) * RACK_HEIGHT_INCREMENT;
-              const profileOffset = BASE_PROFILE_OFFSET + additionalOffset;
+              const profileOffset = BASE_PROFILE_OFFSET;
               updatedNodes = updatedNodes.map((node) =>
                 node.id === movedNode.data.profileNodeId
                   ? {
@@ -230,12 +224,7 @@ export default function Canvas({ onInit }) {
 
       if (isServerNode) {
         const profileNodeId = newNode.data.profileNodeId;
-        const racksInRow = Math.min(
-          Math.max(equipmentData.defaultParameters?.racksInRow || 1, 1),
-          40
-        );
-        const additionalOffset = Math.max(racksInRow - 10, 0) * RACK_HEIGHT_INCREMENT;
-        const profileOffset = BASE_PROFILE_OFFSET + additionalOffset;
+        const profileOffset = BASE_PROFILE_OFFSET;
         addNode({
           id: profileNodeId,
           type: 'loadProfile',
@@ -278,12 +267,7 @@ export default function Canvas({ onInit }) {
       if (node.type !== 'server') return;
       const profileNodeId = node.data?.profileNodeId || `${node.id}-profile`;
       const hasProfileNode = nodes.some((n) => n.id === profileNodeId);
-      const racksInRow = Math.min(
-        Math.max(node.data?.parameters?.racksInRow || 1, 1),
-        40
-      );
-      const additionalOffset = Math.max(racksInRow - 10, 0) * RACK_HEIGHT_INCREMENT;
-      const profileOffset = BASE_PROFILE_OFFSET + additionalOffset;
+      const profileOffset = BASE_PROFILE_OFFSET;
       if (!hasProfileNode) {
         addNode({
           id: profileNodeId,

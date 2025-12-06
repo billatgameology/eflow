@@ -4,45 +4,50 @@ import BaseNodeWrapper from './BaseNodeWrapper';
 export default function ServerNode(props) {
   const racksInRow = Math.min(
     Math.max(props.data?.parameters?.racksInRow || 1, 1),
-    40
+    50
   );
 
-  // Each rack unit - compact spacing
-  const rackUnitHeight = 4; // Height per rack in viewBox units
-  const totalHeight = racksInRow * rackUnitHeight;
-  const svgHeight = Math.max(40, racksInRow * 3); // Minimum 40px, scale up with racks
+  // Visual parameters for horizontal layout
+  const rackWidth = 12;
+  const rackHeight = 24;
+  const gap = 2;
+  
+  const totalWidth = racksInRow * (rackWidth + gap) - gap;
+  const viewBoxWidth = Math.max(totalWidth, 40);
+  const viewBoxHeight = rackHeight + 4;
 
   return (
     <BaseNodeWrapper {...props} className="w-[120px] max-w-[120px]">
       <div className="text-gray-300 flex flex-col items-center justify-center w-full px-2">
-        {/* Server Rack Icon: Stacked squares representing each rack */}
+        {/* Server Rack Icon: Horizontal row of racks */}
         <svg
-          width="40"
-          height={svgHeight}
-          viewBox={`0 0 24 ${totalHeight}`}
+          width="100%"
+          height="50"
+          viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}
+          preserveAspectRatio="xMidYMid meet"
           fill="none"
           stroke="currentColor"
-          strokeWidth="1.5"
+          strokeWidth={racksInRow > 10 ? "0.5" : "1.5"}
         >
-          {/* Generate one square per rack */}
           {Array.from({ length: racksInRow }).map((_, i) => {
-            const y = i * rackUnitHeight;
+            const x = i * (rackWidth + gap) + (viewBoxWidth - totalWidth) / 2;
             return (
               <g key={i}>
-                {/* Rack unit square */}
-                <rect x="5" y={y} width="14" height={rackUnitHeight - 0.2} rx="0.3" />
-                {/* Horizontal divider line */}
-                <line x1="5" y1={y + rackUnitHeight / 2} x2="19" y2={y + rackUnitHeight / 2} />
-                {/* Status lights */}
-                <circle cx="8" cy={y + rackUnitHeight / 4} r="0.4" fill="currentColor" />
-                <circle cx="10" cy={y + rackUnitHeight / 4} r="0.4" fill="currentColor" />
+                <rect x={x} y="2" width={rackWidth} height={rackHeight} rx="1" />
+                <line x1={x + 2} y1="6" x2={x + rackWidth - 2} y2="6" strokeWidth={racksInRow > 10 ? "0.5" : "1"} />
+                <line x1={x + 2} y1="10" x2={x + rackWidth - 2} y2="10" strokeWidth={racksInRow > 10 ? "0.5" : "1"} />
+                <line x1={x + 2} y1="14" x2={x + rackWidth - 2} y2="14" strokeWidth={racksInRow > 10 ? "0.5" : "1"} />
+                <line x1={x + 2} y1="18" x2={x + rackWidth - 2} y2="18" strokeWidth={racksInRow > 10 ? "0.5" : "1"} />
+                {racksInRow <= 10 && (
+                   <circle cx={x + rackWidth - 3} cy="4" r="0.5" fill="currentColor" stroke="none" />
+                )}
               </g>
             );
           })}
         </svg>
         {racksInRow > 1 && (
           <div className="text-[8px] text-gray-500 mt-0.5 truncate w-full text-center">
-            {racksInRow}
+            {racksInRow} Racks
           </div>
         )}
 

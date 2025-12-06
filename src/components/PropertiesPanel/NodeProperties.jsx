@@ -260,6 +260,35 @@ export default function NodeProperties({ node }) {
           </div>
         )}
 
+        {/* Row Capacity Display for Servers */}
+        {node.type === 'server' && (
+          <div className="bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 mb-3">
+            <label className="block text-xs text-gray-500 mb-2">
+              Row Capacity (Max)
+            </label>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-lg font-mono text-neon-cyan font-bold">
+                    {((node.data.parameters?.racksInRow || 1) * (node.data.parameters?.kwRating || 0)).toFixed(2)}
+                  </span>
+                  <span className="text-xs text-gray-400">kW</span>
+                </div>
+                <div className="text-[10px] text-gray-500">Max Power</div>
+              </div>
+              <div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-lg font-mono text-neon-green font-bold">
+                    {((node.data.parameters?.racksInRow || 1) * (node.data.parameters?.current || 0)).toFixed(0)}
+                  </span>
+                  <span className="text-xs text-gray-400">A</span>
+                </div>
+                <div className="text-[10px] text-gray-500">Max Current</div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="space-y-3">
           {Object.entries(node.data.parameters).map(([key, value]) => {
             const inputType = getInputType(value);
@@ -268,6 +297,33 @@ export default function NodeProperties({ node }) {
             if (key === 'isPowerSource') return null;
             // Skip powerDraw as it is now calculated
             if (key === 'powerDraw') return null;
+
+            // Special handling for racksInRow
+            if (key === 'racksInRow') {
+              return (
+                <div key={key}>
+                  <label className="block text-xs text-gray-500 mb-1 capitalize">
+                    {formatLabel(key)}
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min="1"
+                      max="50"
+                      value={value}
+                      onChange={(e) => {
+                        let val = parseInt(e.target.value);
+                        if (isNaN(val)) val = 1;
+                        if (val < 1) val = 1;
+                        if (val > 50) val = 50;
+                        handleParameterChange(key, val);
+                      }}
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 pr-12 text-sm text-white font-mono focus:border-neon-cyan focus:outline-none focus:ring-1 focus:ring-neon-cyan transition-all"
+                    />
+                  </div>
+                </div>
+              );
+            }
 
             return (
               <div key={key}>
