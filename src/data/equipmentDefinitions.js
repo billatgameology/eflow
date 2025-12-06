@@ -148,7 +148,9 @@ export const equipmentDefinitions = {
     category: EQUIPMENT_CATEGORIES.DISTRIBUTION,
     color: '#E5E7EB',
     defaultParameters: {
-      voltage: 208,
+      primaryVoltage: 480,
+      secondaryVoltage: 208,
+      kvaRating: 75,
       ampRating: 30,
       outlets: 24,
     },

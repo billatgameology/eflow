@@ -19,16 +19,14 @@ export default function PowerEdge({
   target,
   source,
   selected,
-  targetHandleId,
 }) {
   const { faultedEdges, toggleEdgeFault, powerFlowMap } = useSimulationStore();
   const { nodes, edges, removeEdge, addNode } = useDiagramStore();
   const isFaulted = faultedEdges.has(id);
   const [isHovered, setIsHovered] = useState(false);
 
-  // Get the actual edge to access targetHandle
+  // Get the actual edge for ID comparison in transfer switch logic
   const currentEdge = edges.find(e => e.id === id);
-  const edgeTargetHandle = currentEdge?.targetHandle || targetHandleId || 'input-0';
 
   // Use smooth step path for 90-degree angled connections
   const [edgePath, labelX, labelY] = getSmoothStepPath({
@@ -55,44 +53,47 @@ export default function PowerEdge({
     
     // Check if target is a transfer switch
     if (targetNode?.type === 'ats' || targetNode?.type === 'mts') {
-      // Use the edgeTargetHandle we retrieved from the current edge
-      const thisEdgeHandle = edgeTargetHandle;
+      // Get incoming edges and sort by source node X position (leftmost = primary)
+      const incomingEdges = edges.filter(e => e.target === target);
+      if (incomingEdges.length === 0) return false;
+      if (incomingEdges.length === 1) return true; // Only one input, must be active
       
-      // Determine which handle should be active
-      let activeHandle = null;
+      // Find primary and secondary edges based on source position
+      let primaryEdge = incomingEdges.find(e => (e.targetHandle || 'input-0') === 'input-0');
+      let secondaryEdge = incomingEdges.find(e => e.targetHandle === 'input-1');
       
-      if (targetNode.type === 'ats') {
-        // ATS: primary (input-0) is preferred, secondary (input-1) only if primary has no power
-        // Check power on each input by looking at incoming edges
-        const incomingEdges = edges.filter(e => e.target === target);
-        const primaryEdge = incomingEdges.find(e => (e.targetHandle || 'input-0') === 'input-0');
-        const secondaryEdge = incomingEdges.find(e => e.targetHandle === 'input-1');
+      // If handles not explicit, sort by source node X position
+      if (!primaryEdge || !secondaryEdge) {
+        const edgesWithPos = incomingEdges.map(e => {
+          const srcNode = nodes.find(n => n.id === e.source);
+          return { edge: e, x: srcNode?.position?.x ?? 0 };
+        }).sort((a, b) => a.x - b.x);
         
-        const primarySourcePower = primaryEdge ? powerFlowMap.get(primaryEdge.source)?.isPowered : false;
-        const secondarySourcePower = secondaryEdge ? powerFlowMap.get(secondaryEdge.source)?.isPowered : false;
-        
-        if (primarySourcePower) {
-          activeHandle = 'input-0';
-        } else if (secondarySourcePower) {
-          activeHandle = 'input-1';
-        }
-      } else if (targetNode.type === 'mts') {
-        // MTS: based on manual selection
-        const manualSelection = targetNode.data?.parameters?.selectedSource ?? 0;
-        const selectedHandle = manualSelection === 0 ? 'input-0' : 'input-1';
-        
-        // Check if selected source has power
-        const incomingEdges = edges.filter(e => e.target === target);
-        const selectedEdge = incomingEdges.find(e => (e.targetHandle || 'input-0') === selectedHandle);
-        const selectedHasPower = selectedEdge ? powerFlowMap.get(selectedEdge.source)?.isPowered : false;
-        
-        if (selectedHasPower) {
-          activeHandle = selectedHandle;
-        }
+        primaryEdge = edgesWithPos[0]?.edge;
+        secondaryEdge = edgesWithPos[1]?.edge;
       }
       
-      // Only flow power if this edge is the active input
-      return thisEdgeHandle === activeHandle;
+      const primaryHasPower = primaryEdge ? powerFlowMap.get(primaryEdge.source)?.isPowered : false;
+      const secondaryHasPower = secondaryEdge ? powerFlowMap.get(secondaryEdge.source)?.isPowered : false;
+      
+      if (targetNode.type === 'ats') {
+        // ATS: primary is preferred, secondary only if primary has no power
+        if (primaryHasPower) {
+          return currentEdge?.id === primaryEdge?.id;
+        } else if (secondaryHasPower) {
+          return currentEdge?.id === secondaryEdge?.id;
+        }
+        return false;
+      } else {
+        // MTS: based on manual selection
+        const manualSelection = targetNode.data?.parameters?.selectedSource ?? 0;
+        if (manualSelection === 0 && primaryHasPower) {
+          return currentEdge?.id === primaryEdge?.id;
+        } else if (manualSelection === 1 && secondaryHasPower) {
+          return currentEdge?.id === secondaryEdge?.id;
+        }
+        return false;
+      }
     }
     
     return true; // Non-transfer-switch targets always flow if source is powered

@@ -1,13 +1,30 @@
 import BaseNodeWrapper from './BaseNodeWrapper';
 import { useSimulationStore } from '../../stores/useSimulationStore';
 
+// Helper to find primary and secondary sources
+function findPrimaryAndSecondary(sources) {
+    if (!sources || sources.length === 0) return { primary: null, secondary: null };
+    
+    let primary = sources.find(s => (s.targetHandle || 'input-0') === 'input-0');
+    let secondary = sources.find(s => s.targetHandle === 'input-1');
+    
+    if (!secondary && sources.length > 1 && primary) {
+        secondary = sources.find(s => s !== primary);
+    }
+    if (!primary && sources.length >= 1) {
+        primary = sources[0];
+        if (sources.length > 1) secondary = sources[1];
+    }
+    
+    return { primary, secondary };
+}
+
 export default function ATSNode(props) {
     const { powerFlowMap } = useSimulationStore();
     const powerInfo = powerFlowMap.get(props.id);
 
-    // Find sources by their target handle
-    const primarySource = powerInfo?.sources?.find(s => (s.targetHandle || 'input-0') === 'input-0');
-    const secondarySource = powerInfo?.sources?.find(s => s.targetHandle === 'input-1');
+    // Find sources
+    const { primary: primarySource, secondary: secondarySource } = findPrimaryAndSecondary(powerInfo?.sources);
 
     // Check power status of each source
     const primaryHasPower = primarySource ? (powerFlowMap.get(primarySource.id)?.isPowered ?? false) : false;

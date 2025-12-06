@@ -135,49 +135,46 @@ export function useSimulation() {
             let powerWatts = 0;
             
             if (targetNode.type === 'ats' || targetNode.type === 'mts') {
-              // Check if this edge is the active input for the transfer switch
-              const targetHandle = edge.targetHandle || 'input-0';
-              const targetPowerInfo = flowMap.get(targetNode.id);
+              const incomingEdges = edges.filter(e => e.target === targetNode.id && !faultedEdges.has(e.id));
               
-              // Determine which handle should be active
-              let activeHandle = null;
-              
-              if (targetNode.type === 'ats') {
-                // ATS: primary (input-0) is preferred, secondary (input-1) only if primary has no power
-                const incomingEdges = edges.filter(e => e.target === targetNode.id && !faultedEdges.has(e.id));
-                const primaryEdge = incomingEdges.find(e => (e.targetHandle || 'input-0') === 'input-0');
-                const secondaryEdge = incomingEdges.find(e => e.targetHandle === 'input-1');
-                
-                const primarySourcePowered = primaryEdge && flowMap.get(primaryEdge.source)?.isPowered;
-                const secondarySourcePowered = secondaryEdge && flowMap.get(secondaryEdge.source)?.isPowered;
-                
-                if (primarySourcePowered) {
-                  activeHandle = 'input-0';
-                } else if (secondarySourcePowered) {
-                  activeHandle = 'input-1';
-                }
-              } else if (targetNode.type === 'mts') {
-                // MTS: based on manual selection
-                const manualSelection = targetNode.data?.parameters?.selectedSource ?? 0;
-                const selectedHandle = manualSelection === 0 ? 'input-0' : 'input-1';
-                
-                // Find the edge for the selected handle
-                const incomingEdges = edges.filter(e => e.target === targetNode.id && !faultedEdges.has(e.id));
-                const selectedEdge = incomingEdges.find(e => (e.targetHandle || 'input-0') === selectedHandle);
-                const selectedSourcePowered = selectedEdge && flowMap.get(selectedEdge.source)?.isPowered;
-                
-                if (selectedSourcePowered) {
-                  activeHandle = selectedHandle;
-                }
-              }
-              
-              // Only show load on this edge if it's the active input
-              if (targetHandle === activeHandle) {
+              if (incomingEdges.length <= 1) {
+                // Only one input, it's active
                 powerWatts = loadMap.get(targetNode.id) || 0;
+              } else {
+                // Find primary/secondary edges by handle or position
+                let primaryEdge = incomingEdges.find(e => (e.targetHandle || 'input-0') === 'input-0');
+                let secondaryEdge = incomingEdges.find(e => e.targetHandle === 'input-1');
+                
+                if (!primaryEdge || !secondaryEdge) {
+                  const edgesWithPos = incomingEdges.map(e => {
+                    const srcNode = nodes.find(n => n.id === e.source);
+                    return { edge: e, x: srcNode?.position?.x ?? 0 };
+                  }).sort((a, b) => a.x - b.x);
+                  
+                  primaryEdge = edgesWithPos[0]?.edge;
+                  secondaryEdge = edgesWithPos[1]?.edge;
+                }
+                
+                const primaryPowered = primaryEdge && flowMap.get(primaryEdge.source)?.isPowered;
+                const secondaryPowered = secondaryEdge && flowMap.get(secondaryEdge.source)?.isPowered;
+                
+                let isActiveEdge = false;
+                if (targetNode.type === 'ats') {
+                  isActiveEdge = primaryPowered 
+                    ? edge.id === primaryEdge?.id 
+                    : secondaryPowered && edge.id === secondaryEdge?.id;
+                } else {
+                  const selection = targetNode.data?.parameters?.selectedSource ?? 0;
+                  isActiveEdge = selection === 0
+                    ? primaryPowered && edge.id === primaryEdge?.id
+                    : secondaryPowered && edge.id === secondaryEdge?.id;
+                }
+                
+                if (isActiveEdge) {
+                  powerWatts = loadMap.get(targetNode.id) || 0;
+                }
               }
-              // else powerWatts stays 0
             } else {
-              // For non-transfer-switch targets, use normal load calculation
               powerWatts = loadMap.get(targetNode.id) || 0;
             }
             

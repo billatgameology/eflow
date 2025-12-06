@@ -1,6 +1,35 @@
 import { interpolateValueAtHour } from './loadProfile';
 
 /**
+ * Helper to find primary and secondary sources for a transfer switch
+ * Primary = input-0 (left handle), Secondary = input-1 (right handle)
+ */
+function findPrimaryAndSecondarySources(sources) {
+  if (!sources || sources.length === 0) {
+    return { primary: null, secondary: null };
+  }
+  
+  // First try to find by explicit targetHandle
+  let primary = sources.find(s => (s.targetHandle || 'input-0') === 'input-0');
+  let secondary = sources.find(s => s.targetHandle === 'input-1');
+  
+  // If we have 2 sources but couldn't find secondary by handle, use the other one
+  if (!secondary && sources.length > 1 && primary) {
+    secondary = sources.find(s => s !== primary);
+  }
+  
+  // If we have 2 sources but couldn't find primary (both have non-standard handles)
+  if (!primary && sources.length >= 1) {
+    primary = sources[0];
+    if (sources.length > 1) {
+      secondary = sources[1];
+    }
+  }
+  
+  return { primary, secondary };
+}
+
+/**
  * Determine the active source for an ATS node
  * Primary (input-0) is preferred; switches to secondary (input-1) if primary has no power
  */
@@ -9,10 +38,7 @@ function getATSActiveSource(node, incomingSources, powerFlowMap) {
     return null;
   }
 
-  // Find primary source (connected to input-0 / left handle)
-  const primarySource = incomingSources.find(s => (s.targetHandle || 'input-0') === 'input-0');
-  // Find secondary source (connected to input-1 / right handle)
-  const secondarySource = incomingSources.find(s => s.targetHandle === 'input-1');
+  const { primary: primarySource, secondary: secondarySource } = findPrimaryAndSecondarySources(incomingSources);
 
   // Check if primary source has power
   if (primarySource) {
@@ -43,11 +69,7 @@ function getMTSActiveSource(node, incomingSources, powerFlowMap) {
   }
 
   const manualSelection = node.data?.parameters?.selectedSource ?? 0;
-
-  // Find primary source (connected to input-0 / left handle)
-  const primarySource = incomingSources.find(s => (s.targetHandle || 'input-0') === 'input-0');
-  // Find secondary source (connected to input-1 / right handle)
-  const secondarySource = incomingSources.find(s => s.targetHandle === 'input-1');
+  const { primary: primarySource, secondary: secondarySource } = findPrimaryAndSecondarySources(incomingSources);
 
   // Return the manually selected source if it has power
   if (manualSelection === 0 && primarySource) {
@@ -95,33 +117,83 @@ export function calculatePowerFlow(nodes, edges, faultedNodes, faultedEdges) {
   // This is needed to determine power availability at ATS/MTS inputs
   powerSources.forEach((source) => {
     const visited = new Set();
-    const queue = [{ nodeId: source.nodeId, sourceColor: source.color, sourceLabel: source.label, targetHandle: null }];
+    const queue = [{ nodeId: source.nodeId, sourceColor: source.color, sourceLabel: source.label, targetHandle: null, fromEdgeId: null }];
 
     while (queue.length > 0) {
-      const { nodeId: currentNodeId, sourceColor, sourceLabel, targetHandle } = queue.shift();
+      const { nodeId: currentNodeId, sourceColor, sourceLabel, targetHandle, fromEdgeId } = queue.shift();
 
       // Skip if already visited from this source
-      const visitKey = `${currentNodeId}-${source.id}`;
+      // For transfer switches, we need to allow the same source to arrive on different handles
+      // So include the targetHandle in the visit key for those nodes
+      const currentNode = nodes.find((n) => n.id === currentNodeId);
+      const isTransferSwitch = currentNode?.type === 'ats' || currentNode?.type === 'mts';
+      
+      // For transfer switches, determine the actual handle from the incoming edge
+      let actualTargetHandle = targetHandle;
+      if (isTransferSwitch && fromEdgeId) {
+        const incomingEdge = edges.find(e => e.id === fromEdgeId);
+        if (incomingEdge?.targetHandle) {
+          actualTargetHandle = incomingEdge.targetHandle;
+        } else {
+          // No explicit targetHandle on edge - infer based on source node position
+          // Compare the X position of the source node to the target node
+          // Left source = input-0 (primary), Right source = input-1 (secondary)
+          const sourceNode = nodes.find(n => n.id === incomingEdge?.source);
+          const targetNode = currentNode;
+          
+          if (sourceNode && targetNode) {
+            const sourceX = sourceNode.position?.x ?? 0;
+            const targetX = targetNode.position?.x ?? 0;
+            // If source is to the left of target (or equal), it's primary
+            // We need to compare with OTHER incoming edges to determine left vs right
+            const allIncomingEdges = edges.filter(e => e.target === currentNodeId);
+            if (allIncomingEdges.length >= 2) {
+              // Find all source positions and sort
+              const edgesWithPositions = allIncomingEdges.map(e => {
+                const srcNode = nodes.find(n => n.id === e.source);
+                return { edge: e, x: srcNode?.position?.x ?? 0 };
+              }).sort((a, b) => a.x - b.x); // Sort by X position (left to right)
+              
+              const edgeIndex = edgesWithPositions.findIndex(ep => ep.edge.id === fromEdgeId);
+              actualTargetHandle = edgeIndex === 0 ? 'input-0' : `input-${edgeIndex}`;
+            } else {
+              actualTargetHandle = 'input-0';
+            }
+          } else {
+            actualTargetHandle = 'input-0';
+          }
+        }
+      }
+      
+      const visitKey = isTransferSwitch 
+        ? `${currentNodeId}-${source.id}-${actualTargetHandle || 'input-0'}`
+        : `${currentNodeId}-${source.id}`;
       if (visited.has(visitKey)) continue;
       visited.add(visitKey);
 
       // Skip if node is faulted
       if (faultedNodes.has(currentNodeId)) continue;
 
-      // Get current node
-      const currentNode = nodes.find((n) => n.id === currentNodeId);
+      // Get current node (already fetched above)
       if (!currentNode) continue;
 
       // Mark as powered from this source
       const powerInfo = powerFlowMap.get(currentNodeId);
 
-      // Check if this source is already tracked
-      if (!powerInfo.sources.find(s => s.id === source.id)) {
+      // For transfer switches (ATS/MTS), we need to track sources per input handle
+      // because the same source could arrive on different handles through different paths
+      
+      // Check if this source is already tracked (for TS, also check handle)
+      const existingSource = powerInfo.sources.find(s => 
+        s.id === source.id && (!isTransferSwitch || s.targetHandle === actualTargetHandle)
+      );
+      
+      if (!existingSource) {
         powerInfo.sources.push({
           id: source.id,
           color: sourceColor,
           label: sourceLabel,
-          targetHandle: targetHandle, // Track which input handle this source connects to
+          targetHandle: actualTargetHandle, // Track which input handle this source connects to
         });
       }
 
@@ -142,12 +214,13 @@ export function calculatePowerFlow(nodes, edges, faultedNodes, faultedEdges) {
         // Skip faulted edges
         if (faultedEdges.has(edge.id)) return;
 
-        // Add target to queue with the same source info, including target handle
+        // Add target to queue with the same source info, including edge id for handle inference
         queue.push({
           nodeId: edge.target,
           targetHandle: edge.targetHandle || null,
           sourceColor: sourceColor,
           sourceLabel: sourceLabel,
+          fromEdgeId: edge.id,
         });
       });
     }
@@ -169,47 +242,45 @@ export function calculatePowerFlow(nodes, edges, faultedNodes, faultedEdges) {
       activeSource = getMTSActiveSource(tsNode, tsPowerInfo.sources, powerFlowMap);
     }
 
-    // Find all nodes downstream of this transfer switch
-    const downstreamNodes = new Set();
-    const outgoingEdges = edges.filter((edge) => edge.source === tsNode.id);
-    const queue = outgoingEdges.map(e => e.target);
+    // Only process IMMEDIATE children of the transfer switch
+    // Don't traverse the full downstream tree - that causes conflicts with nested transfer switches
+    // and complex topologies where the same source reaches nodes through multiple paths
+    const outgoingEdges = edges.filter((edge) => edge.source === tsNode.id && !faultedEdges.has(edge.id));
+    const immediateChildren = new Set(outgoingEdges.map(e => e.target));
 
-    while (queue.length > 0) {
-      const nodeId = queue.shift();
-      if (downstreamNodes.has(nodeId)) continue;
-      downstreamNodes.add(nodeId);
+    // For each immediate child, update its power based on the active source
+    immediateChildren.forEach((childId) => {
+      const childNode = nodes.find(n => n.id === childId);
+      const childPowerInfo = powerFlowMap.get(childId);
+      if (!childPowerInfo) return;
+      
+      // If the child is another transfer switch, don't modify its sources
+      // It will handle its own source management
+      if (childNode?.type === 'ats' || childNode?.type === 'mts') {
+        return;
+      }
 
-      // Add children to queue
-      const childEdges = edges.filter((edge) => edge.source === nodeId);
-      childEdges.forEach((edge) => {
-        if (!faultedEdges.has(edge.id)) {
-          queue.push(edge.target);
-        }
-      });
-    }
-
-    // For each downstream node, filter sources based on active source
-    downstreamNodes.forEach((nodeId) => {
-      const nodePowerInfo = powerFlowMap.get(nodeId);
-      if (!nodePowerInfo) return;
-
-      // Get sources that don't come through this transfer switch
-      const otherSources = nodePowerInfo.sources.filter(s => {
-        // Keep sources that aren't from this transfer switch's inputs
-        const isFromTS = tsPowerInfo.sources.some(tsSource => tsSource.id === s.id);
-        return !isFromTS;
-      });
-
-      // If no active source (MTS selected source has no power), remove all sources from this TS
       if (!activeSource) {
-        nodePowerInfo.sources = otherSources;
+        // No active source from this TS - but the child might have other sources
+        // Remove sources that came from this TS's inputs
+        childPowerInfo.sources = childPowerInfo.sources.filter(s => {
+          const isFromTS = tsPowerInfo.sources.some(tsSource => tsSource.id === s.id);
+          return !isFromTS;
+        });
       } else {
-        // Check if the active source reaches this node
-        const hasActiveSource = nodePowerInfo.sources.some(s => s.id === activeSource.id);
-
-        if (hasActiveSource) {
-          // Replace sources with only the active source (plus any other sources not from this TS)
-          nodePowerInfo.sources = [
+        // Active source exists - replace TS sources with just the active one
+        const otherSources = childPowerInfo.sources.filter(s => {
+          const isFromTS = tsPowerInfo.sources.some(tsSource => tsSource.id === s.id);
+          return !isFromTS;
+        });
+        
+        // Only add the active source if it was reaching this child
+        const hadSourceFromTS = childPowerInfo.sources.some(s => 
+          tsPowerInfo.sources.some(tsSource => tsSource.id === s.id)
+        );
+        
+        if (hadSourceFromTS) {
+          childPowerInfo.sources = [
             ...otherSources,
             {
               id: activeSource.id,
@@ -218,21 +289,17 @@ export function calculatePowerFlow(nodes, edges, faultedNodes, faultedEdges) {
               targetHandle: null,
             }
           ];
-        } else {
-          // This node only gets power from the non-active source through this TS
-          // Remove those sources
-          nodePowerInfo.sources = otherSources;
         }
       }
 
       // Update power status and color
-      nodePowerInfo.isPowered = nodePowerInfo.sources.length > 0;
-      if (nodePowerInfo.sources.length === 0) {
-        nodePowerInfo.color = null;
-      } else if (nodePowerInfo.sources.length === 1) {
-        nodePowerInfo.color = nodePowerInfo.sources[0].color;
+      childPowerInfo.isPowered = childPowerInfo.sources.length > 0;
+      if (childPowerInfo.sources.length === 0) {
+        childPowerInfo.color = null;
+      } else if (childPowerInfo.sources.length === 1) {
+        childPowerInfo.color = childPowerInfo.sources[0].color;
       } else {
-        nodePowerInfo.color = nodePowerInfo.sources.map(s => s.color);
+        childPowerInfo.color = childPowerInfo.sources.map(s => s.color);
       }
     });
 
@@ -422,53 +489,51 @@ export function calculateInstantaneousLoad(nodes, edges, faultedNodes, faultedEd
         // For ATS/MTS nodes, load only flows through the active/selected source
         // Check if the consumer is a transfer switch
         if (consumerNode.type === 'ats' || consumerNode.type === 'mts') {
-          // Find which input handle THIS edge (from nodeId to consumerId) connects to
           const edgeToConsumer = edges.find(e => e.source === nodeId && e.target === consumerId && !faultedEdges.has(e.id));
           if (!edgeToConsumer) return;
           
-          const targetHandle = edgeToConsumer.targetHandle || 'input-0';
+          if (incomingEdges.length <= 1) {
+            // Only one input, it's active - carry full load
+            const consumerLoad = calculateNodeLoad(consumerId, new Set(visited));
+            totalLoad += consumerLoad;
+            return;
+          }
           
-          // Determine which handle should be active
-          let activeHandle = null;
+          // Find primary/secondary edges by handle or position
+          let primaryEdge = incomingEdges.find(e => (e.targetHandle || 'input-0') === 'input-0');
+          let secondaryEdge = incomingEdges.find(e => e.targetHandle === 'input-1');
           
+          if (!primaryEdge || !secondaryEdge) {
+            const edgesWithPos = incomingEdges.map(e => {
+              const srcNode = nodes.find(n => n.id === e.source);
+              return { edge: e, x: srcNode?.position?.x ?? 0 };
+            }).sort((a, b) => a.x - b.x);
+            
+            primaryEdge = edgesWithPos[0]?.edge;
+            secondaryEdge = edgesWithPos[1]?.edge;
+          }
+          
+          const primaryPowered = primaryEdge && powerFlowMap?.get(primaryEdge.source)?.isPowered;
+          const secondaryPowered = secondaryEdge && powerFlowMap?.get(secondaryEdge.source)?.isPowered;
+          
+          let isActiveEdge = false;
           if (consumerNode.type === 'ats') {
-            // ATS: primary (input-0) is preferred, secondary (input-1) only if primary has no power
-            const primaryEdge = incomingEdges.find(e => (e.targetHandle || 'input-0') === 'input-0');
-            const secondaryEdge = incomingEdges.find(e => e.targetHandle === 'input-1');
-            
-            const primarySourcePowered = primaryEdge && powerFlowMap?.get(primaryEdge.source)?.isPowered;
-            const secondarySourcePowered = secondaryEdge && powerFlowMap?.get(secondaryEdge.source)?.isPowered;
-            
-            if (primarySourcePowered) {
-              activeHandle = 'input-0'; // Primary is active
-            } else if (secondarySourcePowered) {
-              activeHandle = 'input-1'; // Secondary is active (primary failed)
-            }
-          } else if (consumerNode.type === 'mts') {
-            // MTS: based on manual selection, but only if that source has power
-            const manualSelection = consumerNode.data?.parameters?.selectedSource ?? 0;
-            const selectedHandle = manualSelection === 0 ? 'input-0' : 'input-1';
-            
-            // Find the edge for the selected handle
-            const selectedEdge = incomingEdges.find(e => (e.targetHandle || 'input-0') === selectedHandle);
-            const selectedSourcePowered = selectedEdge && powerFlowMap?.get(selectedEdge.source)?.isPowered;
-            
-            if (selectedSourcePowered) {
-              activeHandle = selectedHandle;
-            }
+            isActiveEdge = primaryPowered 
+              ? edgeToConsumer.id === primaryEdge?.id
+              : secondaryPowered && edgeToConsumer.id === secondaryEdge?.id;
+          } else {
+            const selection = consumerNode.data?.parameters?.selectedSource ?? 0;
+            isActiveEdge = selection === 0
+              ? primaryPowered && edgeToConsumer.id === primaryEdge?.id
+              : secondaryPowered && edgeToConsumer.id === secondaryEdge?.id;
           }
           
-          // Only carry load if this edge is the active one
-          if (targetHandle !== activeHandle) {
-            return; // This source doesn't carry load for this transfer switch
-          }
+          if (!isActiveEdge) return;
           
-          // If we are the active source, we carry 100% of the load (not split)
           const consumerLoad = calculateNodeLoad(consumerId, new Set(visited));
           totalLoad += consumerLoad;
           return;
         }
-
         // For non-transfer-switch consumers, split load among active sources
         const activeSourcesCount = incomingEdges.length;
 
