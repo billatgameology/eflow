@@ -418,6 +418,58 @@ export function calculateInstantaneousLoad(nodes, edges, faultedNodes, faultedEd
           !faultedEdges.has(e.id) &&
           !faultedNodes.has(e.source) // Don't count sources that are faulted
         );
+
+        // For ATS/MTS nodes, load only flows through the active/selected source
+        // Check if the consumer is a transfer switch
+        if (consumerNode.type === 'ats' || consumerNode.type === 'mts') {
+          // Find which input handle THIS edge (from nodeId to consumerId) connects to
+          const edgeToConsumer = edges.find(e => e.source === nodeId && e.target === consumerId && !faultedEdges.has(e.id));
+          if (!edgeToConsumer) return;
+          
+          const targetHandle = edgeToConsumer.targetHandle || 'input-0';
+          
+          // Determine which handle should be active
+          let activeHandle = null;
+          
+          if (consumerNode.type === 'ats') {
+            // ATS: primary (input-0) is preferred, secondary (input-1) only if primary has no power
+            const primaryEdge = incomingEdges.find(e => (e.targetHandle || 'input-0') === 'input-0');
+            const secondaryEdge = incomingEdges.find(e => e.targetHandle === 'input-1');
+            
+            const primarySourcePowered = primaryEdge && powerFlowMap?.get(primaryEdge.source)?.isPowered;
+            const secondarySourcePowered = secondaryEdge && powerFlowMap?.get(secondaryEdge.source)?.isPowered;
+            
+            if (primarySourcePowered) {
+              activeHandle = 'input-0'; // Primary is active
+            } else if (secondarySourcePowered) {
+              activeHandle = 'input-1'; // Secondary is active (primary failed)
+            }
+          } else if (consumerNode.type === 'mts') {
+            // MTS: based on manual selection, but only if that source has power
+            const manualSelection = consumerNode.data?.parameters?.selectedSource ?? 0;
+            const selectedHandle = manualSelection === 0 ? 'input-0' : 'input-1';
+            
+            // Find the edge for the selected handle
+            const selectedEdge = incomingEdges.find(e => (e.targetHandle || 'input-0') === selectedHandle);
+            const selectedSourcePowered = selectedEdge && powerFlowMap?.get(selectedEdge.source)?.isPowered;
+            
+            if (selectedSourcePowered) {
+              activeHandle = selectedHandle;
+            }
+          }
+          
+          // Only carry load if this edge is the active one
+          if (targetHandle !== activeHandle) {
+            return; // This source doesn't carry load for this transfer switch
+          }
+          
+          // If we are the active source, we carry 100% of the load (not split)
+          const consumerLoad = calculateNodeLoad(consumerId, new Set(visited));
+          totalLoad += consumerLoad;
+          return;
+        }
+
+        // For non-transfer-switch consumers, split load among active sources
         const activeSourcesCount = incomingEdges.length;
 
         if (activeSourcesCount > 0) {
