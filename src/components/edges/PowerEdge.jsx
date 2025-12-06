@@ -38,6 +38,7 @@ export default function PowerEdge({
 
   // Determine edge color based on power flow
   // Get the source node's power info to determine the edge color
+  const sourceNode = source ? nodes.find(n => n.id === source) : null;
   const sourcePowerInfo = source ? powerFlowMap.get(source) : null;
   const targetPowerInfo = target ? powerFlowMap.get(target) : null;
 
@@ -45,12 +46,18 @@ export default function PowerEdge({
   const isPowered = sourcePowerInfo?.isPowered && !isFaulted;
 
   // Use the power source color from the source node
+  // For ATS/MTS nodes, use the activeSource color if available
   let edgeColor = '#4A5568'; // Default gray
 
   if (isFaulted) {
     edgeColor = '#FF0055';
-  } else if (isPowered && sourcePowerInfo?.sources?.length > 0) {
-    edgeColor = sourcePowerInfo.sources[0].color;
+  } else if (isPowered) {
+    // Check if source is a transfer switch with an active source
+    if ((sourceNode?.type === 'ats' || sourceNode?.type === 'mts') && sourcePowerInfo?.activeSource) {
+      edgeColor = sourcePowerInfo.activeSource.color;
+    } else if (sourcePowerInfo?.sources?.length > 0) {
+      edgeColor = sourcePowerInfo.sources[0].color;
+    }
   }
 
   const strokeWidth = isFaulted ? 3 : isPowered ? 2.5 : 1.5;

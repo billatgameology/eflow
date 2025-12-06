@@ -4,6 +4,7 @@ import GeneratorNode from './GeneratorNode';
 import TransformerNode from './TransformerNode';
 import CircuitBreakerNode from './CircuitBreakerNode';
 import ATSNode from './ATSNode';
+import MTSNode from './MTSNode';
 import UPSNode from './UPSNode';
 import ServerNode from './ServerNode';
 import PDUNode from './PDUNode';
@@ -21,6 +22,7 @@ export const nodeTypes = {
   transformer: TransformerNode,
   circuitBreaker: CircuitBreakerNode,
   ats: ATSNode,
+  mts: MTSNode,
   ups: UPSNode,
   server: ServerNode,
   pdu: PDUNode,

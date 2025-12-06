@@ -1,6 +1,71 @@
 import { interpolateValueAtHour } from './loadProfile';
 
 /**
+ * Determine the active source for an ATS node
+ * Primary (input-0) is preferred; switches to secondary (input-1) if primary has no power
+ */
+function getATSActiveSource(node, incomingSources, powerFlowMap) {
+  if (!incomingSources || incomingSources.length === 0) {
+    return null;
+  }
+
+  // Find primary source (connected to input-0 / left handle)
+  const primarySource = incomingSources.find(s => (s.targetHandle || 'input-0') === 'input-0');
+  // Find secondary source (connected to input-1 / right handle)
+  const secondarySource = incomingSources.find(s => s.targetHandle === 'input-1');
+
+  // Check if primary source has power
+  if (primarySource) {
+    const primaryPowerInfo = powerFlowMap.get(primarySource.id);
+    if (primaryPowerInfo?.isPowered) {
+      return primarySource; // Use primary source
+    }
+  }
+
+  // Primary has no power, use secondary if available
+  if (secondarySource) {
+    const secondaryPowerInfo = powerFlowMap.get(secondarySource.id);
+    if (secondaryPowerInfo?.isPowered) {
+      return secondarySource; // Use secondary source
+    }
+  }
+
+  return null; // No power available
+}
+
+/**
+ * Determine the active source for an MTS node
+ * Based on manual selection stored in node parameters
+ */
+function getMTSActiveSource(node, incomingSources, powerFlowMap) {
+  if (!incomingSources || incomingSources.length === 0) {
+    return null;
+  }
+
+  const manualSelection = node.data?.parameters?.selectedSource ?? 0;
+
+  // Find primary source (connected to input-0 / left handle)
+  const primarySource = incomingSources.find(s => (s.targetHandle || 'input-0') === 'input-0');
+  // Find secondary source (connected to input-1 / right handle)
+  const secondarySource = incomingSources.find(s => s.targetHandle === 'input-1');
+
+  // Return the manually selected source if it has power
+  if (manualSelection === 0 && primarySource) {
+    const primaryPowerInfo = powerFlowMap.get(primarySource.id);
+    if (primaryPowerInfo?.isPowered) {
+      return primarySource;
+    }
+  } else if (manualSelection === 1 && secondarySource) {
+    const secondaryPowerInfo = powerFlowMap.get(secondarySource.id);
+    if (secondaryPowerInfo?.isPowered) {
+      return secondarySource;
+    }
+  }
+
+  return null; // Selected source has no power
+}
+
+/**
  * Calculate power flow through the diagram
  * Returns a Map of nodeId -> { sources: [], color: string, isPowered: boolean }
  */
@@ -26,13 +91,14 @@ export function calculatePowerFlow(nodes, edges, faultedNodes, faultedEdges) {
       label: node.data.label || node.data.equipment?.label,
     }));
 
-  // For each power source, traverse the graph using BFS
+  // First pass: Calculate which sources reach each node (without transfer switch logic)
+  // This is needed to determine power availability at ATS/MTS inputs
   powerSources.forEach((source) => {
     const visited = new Set();
-    const queue = [{ nodeId: source.nodeId, sourceColor: source.color, sourceLabel: source.label }];
+    const queue = [{ nodeId: source.nodeId, sourceColor: source.color, sourceLabel: source.label, targetHandle: null }];
 
     while (queue.length > 0) {
-      const { nodeId: currentNodeId, sourceColor, sourceLabel } = queue.shift();
+      const { nodeId: currentNodeId, sourceColor, sourceLabel, targetHandle } = queue.shift();
 
       // Skip if already visited from this source
       const visitKey = `${currentNodeId}-${source.id}`;
@@ -55,6 +121,7 @@ export function calculatePowerFlow(nodes, edges, faultedNodes, faultedEdges) {
           id: source.id,
           color: sourceColor,
           label: sourceLabel,
+          targetHandle: targetHandle, // Track which input handle this source connects to
         });
       }
 
@@ -75,14 +142,109 @@ export function calculatePowerFlow(nodes, edges, faultedNodes, faultedEdges) {
         // Skip faulted edges
         if (faultedEdges.has(edge.id)) return;
 
-        // Add target to queue with the same source info
+        // Add target to queue with the same source info, including target handle
         queue.push({
           nodeId: edge.target,
+          targetHandle: edge.targetHandle || null,
           sourceColor: sourceColor,
           sourceLabel: sourceLabel,
         });
       });
     }
+  });
+
+  // Second pass: Apply transfer switch logic for ATS and MTS nodes
+  // Clear downstream nodes of transfer switches and recalculate with only active source
+  const transferSwitchNodes = nodes.filter(n => n.type === 'ats' || n.type === 'mts');
+  
+  transferSwitchNodes.forEach((tsNode) => {
+    const tsPowerInfo = powerFlowMap.get(tsNode.id);
+    if (!tsPowerInfo?.sources || tsPowerInfo.sources.length === 0) return;
+
+    // Determine active source based on node type
+    let activeSource;
+    if (tsNode.type === 'ats') {
+      activeSource = getATSActiveSource(tsNode, tsPowerInfo.sources, powerFlowMap);
+    } else if (tsNode.type === 'mts') {
+      activeSource = getMTSActiveSource(tsNode, tsPowerInfo.sources, powerFlowMap);
+    }
+
+    // Find all nodes downstream of this transfer switch
+    const downstreamNodes = new Set();
+    const outgoingEdges = edges.filter((edge) => edge.source === tsNode.id);
+    const queue = outgoingEdges.map(e => e.target);
+
+    while (queue.length > 0) {
+      const nodeId = queue.shift();
+      if (downstreamNodes.has(nodeId)) continue;
+      downstreamNodes.add(nodeId);
+
+      // Add children to queue
+      const childEdges = edges.filter((edge) => edge.source === nodeId);
+      childEdges.forEach((edge) => {
+        if (!faultedEdges.has(edge.id)) {
+          queue.push(edge.target);
+        }
+      });
+    }
+
+    // For each downstream node, filter sources based on active source
+    downstreamNodes.forEach((nodeId) => {
+      const nodePowerInfo = powerFlowMap.get(nodeId);
+      if (!nodePowerInfo) return;
+
+      // Get sources that don't come through this transfer switch
+      const otherSources = nodePowerInfo.sources.filter(s => {
+        // Keep sources that aren't from this transfer switch's inputs
+        const isFromTS = tsPowerInfo.sources.some(tsSource => tsSource.id === s.id);
+        return !isFromTS;
+      });
+
+      // If no active source (MTS selected source has no power), remove all sources from this TS
+      if (!activeSource) {
+        nodePowerInfo.sources = otherSources;
+      } else {
+        // Check if the active source reaches this node
+        const hasActiveSource = nodePowerInfo.sources.some(s => s.id === activeSource.id);
+
+        if (hasActiveSource) {
+          // Replace sources with only the active source (plus any other sources not from this TS)
+          nodePowerInfo.sources = [
+            ...otherSources,
+            {
+              id: activeSource.id,
+              color: activeSource.color,
+              label: activeSource.label,
+              targetHandle: null,
+            }
+          ];
+        } else {
+          // This node only gets power from the non-active source through this TS
+          // Remove those sources
+          nodePowerInfo.sources = otherSources;
+        }
+      }
+
+      // Update power status and color
+      nodePowerInfo.isPowered = nodePowerInfo.sources.length > 0;
+      if (nodePowerInfo.sources.length === 0) {
+        nodePowerInfo.color = null;
+      } else if (nodePowerInfo.sources.length === 1) {
+        nodePowerInfo.color = nodePowerInfo.sources[0].color;
+      } else {
+        nodePowerInfo.color = nodePowerInfo.sources.map(s => s.color);
+      }
+    });
+
+    // Also update the transfer switch node itself
+    // Keep both sources tracked for the dual power indicator, but set activeSource
+    const activePowerInfo = {
+      ...tsPowerInfo,
+      activeSource: activeSource, // Can be null if selected source has no power
+      color: activeSource ? activeSource.color : null,
+      isPowered: activeSource !== null, // MTS is only "powered" for output if active source has power
+    };
+    powerFlowMap.set(tsNode.id, activePowerInfo);
   });
 
   return powerFlowMap;

@@ -110,6 +110,22 @@ export const equipmentDefinitions = {
     },
   },
 
+  mts: {
+    type: 'mts',
+    label: 'MTS',
+    category: EQUIPMENT_CATEGORIES.PROTECTION,
+    color: '#E5E7EB',
+    defaultParameters: {
+      voltage: 480,
+      ampRating: 400,
+      selectedSource: 0, // 0 = primary (left), 1 = secondary (right)
+    },
+    ports: {
+      input: 2,
+      output: 1,
+    },
+  },
+
   circuitBreaker: {
     type: 'circuitBreaker',
     label: 'Circuit Breaker',
