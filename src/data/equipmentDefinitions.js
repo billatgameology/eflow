@@ -174,7 +174,7 @@ export const equipmentDefinitions = {
     },
     loadProfile: createDefaultLoadProfile(),
     ports: {
-      input: 2,
+      input: 1,
       output: 0,
     },
   },

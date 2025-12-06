@@ -1,0 +1,932 @@
+{
+  "id": "8f59e8ae-e4d5-4a53-84ba-332c446fd736",
+  "name": "DC sample",
+  "nodes": [
+    {
+      "id": "87a461e5-72d7-462d-866a-9a7d44dff9d8",
+      "type": "utility",
+      "position": {
+        "x": -209.2991533733638,
+        "y": -32.81961196055025
+      },
+      "data": {
+        "label": "Utility Connection",
+        "equipment": {
+          "type": "utility",
+          "label": "Utility Connection",
+          "category": "generation",
+          "color": "#00D9FF",
+          "defaultParameters": {
+            "voltage": 13800,
+            "phases": 3,
+            "isPowerSource": true
+          },
+          "ports": {
+            "input": 0,
+            "output": 1
+          }
+        },
+        "parameters": {
+          "voltage": 13800,
+          "phases": 3,
+          "isPowerSource": true
+        },
+        "loadProfile": null
+      },
+      "width": 134,
+      "height": 123,
+      "selected": false
+    },
+    {
+      "id": "4468088d-b94a-4e21-b11b-11df721fd0cc",
+      "type": "generator",
+      "position": {
+        "x": -33.1360292647866,
+        "y": 129.67127585301415
+      },
+      "data": {
+        "label": "Generator",
+        "equipment": {
+          "type": "generator",
+          "label": "Generator",
+          "category": "generation",
+          "color": "#FF6B00",
+          "defaultParameters": {
+            "voltage": 480,
+            "phases": 3,
+            "kwRating": 2000,
+            "fuelType": "diesel",
+            "isPowerSource": true
+          },
+          "ports": {
+            "input": 0,
+            "output": 1
+          }
+        },
+        "parameters": {
+          "voltage": 480,
+          "phases": 3,
+          "kwRating": 2000,
+          "fuelType": "diesel",
+          "isPowerSource": true
+        },
+        "loadProfile": null
+      },
+      "width": 100,
+      "height": 134,
+      "selected": false
+    },
+    {
+      "id": "aa757ab2-cecf-4ff2-9fa0-e6b6fbec81ae",
+      "type": "transformer",
+      "position": {
+        "x": -191.90440970701343,
+        "y": 130.56205993444368
+      },
+      "data": {
+        "label": "Transformer",
+        "equipment": {
+          "type": "transformer",
+          "label": "Transformer",
+          "category": "distribution",
+          "color": "#E5E7EB",
+          "defaultParameters": {
+            "primaryVoltage": 13800,
+            "secondaryVoltage": 480,
+            "kvaRating": 2500,
+            "phases": 3
+          },
+          "ports": {
+            "input": 1,
+            "output": 1
+          }
+        },
+        "parameters": {
+          "primaryVoltage": 13800,
+          "secondaryVoltage": 480,
+          "kvaRating": 2500,
+          "phases": 3
+        },
+        "loadProfile": null
+      },
+      "width": 100,
+      "height": 115,
+      "selected": false
+    },
+    {
+      "id": "c2fe7673-9299-4552-a0e9-4c9ce4eb76b6",
+      "type": "switchgear",
+      "position": {
+        "x": -175.99999999999997,
+        "y": 318.5668436577912
+      },
+      "data": {
+        "label": "Switchgear",
+        "equipment": {
+          "type": "switchgear",
+          "label": "Switchgear",
+          "category": "distribution",
+          "color": "#E5E7EB",
+          "defaultParameters": {
+            "voltage": 480,
+            "ampRating": 4000,
+            "type": "main"
+          },
+          "ports": {
+            "input": 2,
+            "output": 4
+          }
+        },
+        "parameters": {
+          "voltage": 480,
+          "ampRating": 4000,
+          "type": "main"
+        },
+        "loadProfile": null
+      },
+      "width": 100,
+      "height": 170,
+      "selected": false
+    },
+    {
+      "id": "4e9a4cb6-f623-4a62-9ae3-a01f42307954",
+      "type": "pdu",
+      "position": {
+        "x": -176.89751005066725,
+        "y": 720
+      },
+      "data": {
+        "label": "PDU",
+        "equipment": {
+          "type": "pdu",
+          "label": "PDU",
+          "category": "distribution",
+          "color": "#E5E7EB",
+          "defaultParameters": {
+            "primaryVoltage": 480,
+            "secondaryVoltage": 208,
+            "kvaRating": 75,
+            "ampRating": 30,
+            "outlets": 24
+          },
+          "ports": {
+            "input": 1,
+            "output": 4
+          }
+        },
+        "parameters": {
+          "primaryVoltage": 480,
+          "secondaryVoltage": 208,
+          "kvaRating": 75,
+          "ampRating": 30,
+          "outlets": 24
+        },
+        "loadProfile": null
+      },
+      "width": 100,
+      "height": 115,
+      "selected": false
+    },
+    {
+      "id": "80b7b54f-97e7-4f55-aac3-fd3055cc8f17",
+      "type": "ats",
+      "position": {
+        "x": -176,
+        "y": 544
+      },
+      "data": {
+        "label": "ATS",
+        "equipment": {
+          "type": "ats",
+          "label": "ATS",
+          "category": "protection",
+          "color": "#E5E7EB",
+          "defaultParameters": {
+            "voltage": 480,
+            "ampRating": 400,
+            "transferTime": 100
+          },
+          "ports": {
+            "input": 2,
+            "output": 1
+          }
+        },
+        "parameters": {
+          "voltage": 480,
+          "ampRating": 400,
+          "transferTime": 100
+        },
+        "loadProfile": null
+      },
+      "width": 100,
+      "height": 123,
+      "selected": false
+    },
+    {
+      "id": "0082149f-5622-4af4-a0cc-23e9b4cdd32b",
+      "type": "switchgear",
+      "position": {
+        "x": 118.42143192236966,
+        "y": 321.13602926478666
+      },
+      "data": {
+        "label": "Switchgear",
+        "equipment": {
+          "type": "switchgear",
+          "label": "Switchgear",
+          "category": "distribution",
+          "color": "#E5E7EB",
+          "defaultParameters": {
+            "voltage": 480,
+            "ampRating": 4000,
+            "type": "main"
+          },
+          "ports": {
+            "input": 1,
+            "output": 4
+          }
+        },
+        "parameters": {
+          "voltage": 480,
+          "ampRating": 4000,
+          "type": "main"
+        },
+        "loadProfile": null
+      },
+      "width": 100,
+      "height": 170,
+      "selected": false
+    },
+    {
+      "id": "97a177e5-ca51-4104-8d12-f729a92686d7",
+      "type": "server",
+      "position": {
+        "x": -431.1024899493328,
+        "y": 1067.8563869920818
+      },
+      "data": {
+        "label": "Server Rack",
+        "equipment": {
+          "type": "server",
+          "label": "Server Rack",
+          "category": "end-equipment",
+          "color": "#9CA3AF",
+          "defaultParameters": {
+            "kwRating": 10,
+            "voltage": 208,
+            "current": 20,
+            "racksInRow": 1
+          },
+          "loadProfile": {
+            "enabled": true,
+            "points": [
+              {
+                "hour": 0,
+                "percentage": 50
+              },
+              {
+                "hour": 23,
+                "percentage": 50
+              }
+            ]
+          },
+          "ports": {
+            "input": 1,
+            "output": 0
+          }
+        },
+        "parameters": {
+          "kwRating": 10,
+          "voltage": 208,
+          "current": 20,
+          "racksInRow": 1
+        },
+        "loadProfile": {
+          "enabled": true,
+          "points": [
+            {
+              "hour": 0,
+              "percentage": 50
+            },
+            {
+              "hour": 23,
+              "percentage": 50
+            }
+          ]
+        },
+        "profileNodeId": "97a177e5-ca51-4104-8d12-f729a92686d7-profile"
+      },
+      "width": 120,
+      "height": 115,
+      "selected": false
+    },
+    {
+      "id": "97a177e5-ca51-4104-8d12-f729a92686d7-profile",
+      "type": "loadProfile",
+      "position": {
+        "x": -431.1024899493328,
+        "y": 1227.8563869920818
+      },
+      "data": {
+        "parentNodeId": "97a177e5-ca51-4104-8d12-f729a92686d7"
+      },
+      "selectable": false,
+      "draggable": false,
+      "deletable": false,
+      "width": 120,
+      "height": 136,
+      "selected": false
+    },
+    {
+      "id": "c4607f0f-ad12-4f52-8062-7d3b2c172fbb",
+      "type": "server",
+      "position": {
+        "x": -303.1024899493328,
+        "y": 1067.8563869920818
+      },
+      "data": {
+        "label": "Server Rack",
+        "equipment": {
+          "type": "server",
+          "label": "Server Rack",
+          "category": "end-equipment",
+          "color": "#9CA3AF",
+          "defaultParameters": {
+            "kwRating": 10,
+            "voltage": 208,
+            "current": 20,
+            "racksInRow": 1
+          },
+          "loadProfile": {
+            "enabled": true,
+            "points": [
+              {
+                "hour": 0,
+                "percentage": 50
+              },
+              {
+                "hour": 23,
+                "percentage": 50
+              }
+            ]
+          },
+          "ports": {
+            "input": 1,
+            "output": 0
+          }
+        },
+        "parameters": {
+          "kwRating": 10,
+          "voltage": 208,
+          "current": 20,
+          "racksInRow": 1
+        },
+        "loadProfile": {
+          "enabled": true,
+          "points": [
+            {
+              "hour": 0,
+              "percentage": 50
+            },
+            {
+              "hour": 23,
+              "percentage": 50
+            }
+          ]
+        },
+        "profileNodeId": "c4607f0f-ad12-4f52-8062-7d3b2c172fbb-profile"
+      },
+      "width": 120,
+      "height": 115,
+      "selected": false
+    },
+    {
+      "id": "c4607f0f-ad12-4f52-8062-7d3b2c172fbb-profile",
+      "type": "loadProfile",
+      "position": {
+        "x": -303.1024899493328,
+        "y": 1227.8563869920818
+      },
+      "data": {
+        "parentNodeId": "c4607f0f-ad12-4f52-8062-7d3b2c172fbb"
+      },
+      "selectable": false,
+      "draggable": false,
+      "deletable": false,
+      "width": 120,
+      "height": 136,
+      "selected": false
+    },
+    {
+      "id": "e065d44e-38d6-42fe-807c-9cac7554c0c3",
+      "type": "server",
+      "position": {
+        "x": -175.10248994933278,
+        "y": 1067.8563869920818
+      },
+      "data": {
+        "label": "Server Rack",
+        "equipment": {
+          "type": "server",
+          "label": "Server Rack",
+          "category": "end-equipment",
+          "color": "#9CA3AF",
+          "defaultParameters": {
+            "kwRating": 10,
+            "voltage": 208,
+            "current": 20,
+            "racksInRow": 1
+          },
+          "loadProfile": {
+            "enabled": true,
+            "points": [
+              {
+                "hour": 0,
+                "percentage": 50
+              },
+              {
+                "hour": 23,
+                "percentage": 50
+              }
+            ]
+          },
+          "ports": {
+            "input": 1,
+            "output": 0
+          }
+        },
+        "parameters": {
+          "kwRating": 10,
+          "voltage": 208,
+          "current": 20,
+          "racksInRow": 1
+        },
+        "loadProfile": {
+          "enabled": true,
+          "points": [
+            {
+              "hour": 0,
+              "percentage": 50
+            },
+            {
+              "hour": 23,
+              "percentage": 50
+            }
+          ]
+        },
+        "profileNodeId": "e065d44e-38d6-42fe-807c-9cac7554c0c3-profile"
+      },
+      "width": 120,
+      "height": 115,
+      "selected": false
+    },
+    {
+      "id": "e065d44e-38d6-42fe-807c-9cac7554c0c3-profile",
+      "type": "loadProfile",
+      "position": {
+        "x": -175.10248994933278,
+        "y": 1227.8563869920818
+      },
+      "data": {
+        "parentNodeId": "e065d44e-38d6-42fe-807c-9cac7554c0c3"
+      },
+      "selectable": false,
+      "draggable": false,
+      "deletable": false,
+      "width": 120,
+      "height": 136,
+      "selected": false
+    },
+    {
+      "id": "3f211686-5c29-45e3-84fd-a34264963490",
+      "type": "server",
+      "position": {
+        "x": 55.33526131734868,
+        "y": 1067.8563869920818
+      },
+      "data": {
+        "label": "Server Rack",
+        "equipment": {
+          "type": "server",
+          "label": "Server Rack",
+          "category": "end-equipment",
+          "color": "#9CA3AF",
+          "defaultParameters": {
+            "kwRating": 10,
+            "voltage": 208,
+            "current": 20,
+            "racksInRow": 1
+          },
+          "loadProfile": {
+            "enabled": true,
+            "points": [
+              {
+                "hour": 0,
+                "percentage": 50
+              },
+              {
+                "hour": 23,
+                "percentage": 50
+              }
+            ]
+          },
+          "ports": {
+            "input": 1,
+            "output": 0
+          }
+        },
+        "parameters": {
+          "kwRating": 10,
+          "voltage": 208,
+          "current": 20,
+          "racksInRow": 1
+        },
+        "loadProfile": {
+          "enabled": true,
+          "points": [
+            {
+              "hour": 0,
+              "percentage": 30
+            },
+            {
+              "hour": 6,
+              "percentage": 40
+            },
+            {
+              "hour": 9,
+              "percentage": 65
+            },
+            {
+              "hour": 12,
+              "percentage": 80
+            },
+            {
+              "hour": 14,
+              "percentage": 92
+            },
+            {
+              "hour": 17,
+              "percentage": 70
+            },
+            {
+              "hour": 20,
+              "percentage": 55
+            },
+            {
+              "hour": 22,
+              "percentage": 40
+            },
+            {
+              "hour": 23,
+              "percentage": 40
+            }
+          ]
+        },
+        "profileNodeId": "3f211686-5c29-45e3-84fd-a34264963490-profile"
+      },
+      "width": 120,
+      "height": 115,
+      "selected": false
+    },
+    {
+      "id": "3f211686-5c29-45e3-84fd-a34264963490-profile",
+      "type": "loadProfile",
+      "position": {
+        "x": 55.33526131734868,
+        "y": 1227.8563869920818
+      },
+      "data": {
+        "parentNodeId": "3f211686-5c29-45e3-84fd-a34264963490"
+      },
+      "selectable": false,
+      "draggable": false,
+      "deletable": false,
+      "width": 120,
+      "height": 136,
+      "selected": false
+    },
+    {
+      "id": "28fcf441-3e2e-4597-92e7-7b16477b5d4f",
+      "type": "utility",
+      "position": {
+        "x": 101.42143192236966,
+        "y": -31.683582695763562
+      },
+      "data": {
+        "label": "Utility Connection",
+        "equipment": {
+          "type": "utility",
+          "label": "Utility Connection",
+          "category": "generation",
+          "color": "#00FF9F",
+          "defaultParameters": {
+            "voltage": 13800,
+            "phases": 3,
+            "isPowerSource": true
+          },
+          "ports": {
+            "input": 0,
+            "output": 1
+          }
+        },
+        "parameters": {
+          "voltage": 13800,
+          "phases": 3,
+          "isPowerSource": true
+        },
+        "loadProfile": null
+      },
+      "width": 134,
+      "height": 123,
+      "selected": false
+    },
+    {
+      "id": "d00d1566-fd63-4c00-a1f2-8c5083abf86c",
+      "type": "transformer",
+      "position": {
+        "x": 118.42143192236966,
+        "y": 133.07936364737418
+      },
+      "data": {
+        "label": "Transformer",
+        "equipment": {
+          "type": "transformer",
+          "label": "Transformer",
+          "category": "distribution",
+          "color": "#E5E7EB",
+          "defaultParameters": {
+            "primaryVoltage": 13800,
+            "secondaryVoltage": 480,
+            "kvaRating": 2500,
+            "phases": 3
+          },
+          "ports": {
+            "input": 1,
+            "output": 1
+          }
+        },
+        "parameters": {
+          "primaryVoltage": 13800,
+          "secondaryVoltage": 480,
+          "kvaRating": 2500,
+          "phases": 3
+        },
+        "loadProfile": null
+      },
+      "width": 100,
+      "height": 115,
+      "selected": false
+    },
+    {
+      "id": "8d2ee3d7-6768-4e3b-bffb-408284b83cab",
+      "type": "mts",
+      "position": {
+        "x": 65.33526131734868,
+        "y": 878.360160810676
+      },
+      "data": {
+        "label": "MTS",
+        "equipment": {
+          "type": "mts",
+          "label": "MTS",
+          "category": "protection",
+          "color": "#E5E7EB",
+          "defaultParameters": {
+            "voltage": 480,
+            "ampRating": 400,
+            "selectedSource": 0
+          },
+          "ports": {
+            "input": 2,
+            "output": 1
+          }
+        },
+        "parameters": {
+          "voltage": 208,
+          "ampRating": 400,
+          "selectedSource": 0
+        },
+        "loadProfile": null
+      },
+      "width": 100,
+      "height": 123,
+      "selected": false
+    },
+    {
+      "id": "d7e4a992-9bce-41ae-9608-c45725302652",
+      "type": "pdu",
+      "position": {
+        "x": 110.20497989866544,
+        "y": 720
+      },
+      "data": {
+        "label": "PDU",
+        "equipment": {
+          "type": "pdu",
+          "label": "PDU",
+          "category": "distribution",
+          "color": "#E5E7EB",
+          "defaultParameters": {
+            "primaryVoltage": 480,
+            "secondaryVoltage": 208,
+            "kvaRating": 75,
+            "ampRating": 30,
+            "outlets": 24
+          },
+          "ports": {
+            "input": 1,
+            "output": 4
+          }
+        },
+        "parameters": {
+          "primaryVoltage": 480,
+          "secondaryVoltage": 208,
+          "kvaRating": 75,
+          "ampRating": 30,
+          "outlets": 24
+        },
+        "loadProfile": null
+      },
+      "width": 100,
+      "height": 115,
+      "selected": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "87a461e5-72d7-462d-866a-9a7d44dff9d8",
+      "sourceHandle": "output-0",
+      "target": "aa757ab2-cecf-4ff2-9fa0-e6b6fbec81ae",
+      "targetHandle": "input-0",
+      "type": "power",
+      "animated": false,
+      "id": "073326de-2db7-4cff-94c1-d068da633110"
+    },
+    {
+      "source": "aa757ab2-cecf-4ff2-9fa0-e6b6fbec81ae",
+      "sourceHandle": "output-0",
+      "target": "c2fe7673-9299-4552-a0e9-4c9ce4eb76b6",
+      "targetHandle": "input-0",
+      "type": "power",
+      "animated": false,
+      "id": "d10c8949-0d44-4f2b-96dc-088c9c701d73"
+    },
+    {
+      "source": "4468088d-b94a-4e21-b11b-11df721fd0cc",
+      "sourceHandle": "output-0",
+      "target": "c2fe7673-9299-4552-a0e9-4c9ce4eb76b6",
+      "targetHandle": "input-1",
+      "type": "power",
+      "animated": false,
+      "id": "8ab7e100-12cb-4fa7-877d-7c23d2c873bf"
+    },
+    {
+      "source": "0082149f-5622-4af4-a0cc-23e9b4cdd32b",
+      "sourceHandle": "output-0",
+      "target": "80b7b54f-97e7-4f55-aac3-fd3055cc8f17",
+      "targetHandle": "input-1",
+      "type": "power",
+      "animated": false,
+      "id": "e5b71b04-2152-470a-a7cd-9231b0b3789a"
+    },
+    {
+      "source": "c2fe7673-9299-4552-a0e9-4c9ce4eb76b6",
+      "sourceHandle": "output-0",
+      "target": "80b7b54f-97e7-4f55-aac3-fd3055cc8f17",
+      "targetHandle": "input-0",
+      "type": "power",
+      "animated": false,
+      "id": "c362f493-e2be-4692-97eb-39b6aea15242"
+    },
+    {
+      "source": "80b7b54f-97e7-4f55-aac3-fd3055cc8f17",
+      "sourceHandle": "output-0",
+      "target": "4e9a4cb6-f623-4a62-9ae3-a01f42307954",
+      "targetHandle": "input-0",
+      "type": "power",
+      "animated": false,
+      "id": "53126074-e3aa-46b7-a02b-eb5cd5b77c5d"
+    },
+    {
+      "id": "97a177e5-ca51-4104-8d12-f729a92686d7-profile-edge",
+      "source": "97a177e5-ca51-4104-8d12-f729a92686d7",
+      "target": "97a177e5-ca51-4104-8d12-f729a92686d7-profile",
+      "sourceHandle": "profile-link",
+      "targetHandle": "profile-link-target",
+      "type": "relationship",
+      "selectable": false
+    },
+    {
+      "source": "4e9a4cb6-f623-4a62-9ae3-a01f42307954",
+      "sourceHandle": "output-0",
+      "target": "97a177e5-ca51-4104-8d12-f729a92686d7",
+      "targetHandle": "input-0",
+      "type": "power",
+      "animated": false,
+      "id": "fda71e45-0eab-44bb-abc3-c935ef614292"
+    },
+    {
+      "id": "c4607f0f-ad12-4f52-8062-7d3b2c172fbb-profile-edge",
+      "source": "c4607f0f-ad12-4f52-8062-7d3b2c172fbb",
+      "target": "c4607f0f-ad12-4f52-8062-7d3b2c172fbb-profile",
+      "sourceHandle": "profile-link",
+      "targetHandle": "profile-link-target",
+      "type": "relationship",
+      "selectable": false
+    },
+    {
+      "source": "4e9a4cb6-f623-4a62-9ae3-a01f42307954",
+      "sourceHandle": "output-1",
+      "target": "c4607f0f-ad12-4f52-8062-7d3b2c172fbb",
+      "targetHandle": "input-0",
+      "type": "power",
+      "animated": false,
+      "id": "9f244e26-9b7e-4d77-b797-f04d8ff41f24"
+    },
+    {
+      "id": "e065d44e-38d6-42fe-807c-9cac7554c0c3-profile-edge",
+      "source": "e065d44e-38d6-42fe-807c-9cac7554c0c3",
+      "target": "e065d44e-38d6-42fe-807c-9cac7554c0c3-profile",
+      "sourceHandle": "profile-link",
+      "targetHandle": "profile-link-target",
+      "type": "relationship",
+      "selectable": false
+    },
+    {
+      "source": "4e9a4cb6-f623-4a62-9ae3-a01f42307954",
+      "sourceHandle": "output-2",
+      "target": "e065d44e-38d6-42fe-807c-9cac7554c0c3",
+      "targetHandle": "input-0",
+      "type": "power",
+      "animated": false,
+      "id": "8c49a5fb-1d0a-4f1c-9ebf-ccee41f9cd3c"
+    },
+    {
+      "id": "3f211686-5c29-45e3-84fd-a34264963490-profile-edge",
+      "source": "3f211686-5c29-45e3-84fd-a34264963490",
+      "target": "3f211686-5c29-45e3-84fd-a34264963490-profile",
+      "sourceHandle": "profile-link",
+      "targetHandle": "profile-link-target",
+      "type": "relationship",
+      "selectable": false
+    },
+    {
+      "source": "d00d1566-fd63-4c00-a1f2-8c5083abf86c",
+      "sourceHandle": "output-0",
+      "target": "0082149f-5622-4af4-a0cc-23e9b4cdd32b",
+      "targetHandle": "input-0",
+      "type": "power",
+      "animated": false,
+      "id": "2e35b2b8-2548-4f5f-896d-abb2effba5dc"
+    },
+    {
+      "source": "28fcf441-3e2e-4597-92e7-7b16477b5d4f",
+      "sourceHandle": "output-0",
+      "target": "d00d1566-fd63-4c00-a1f2-8c5083abf86c",
+      "targetHandle": "input-0",
+      "type": "power",
+      "animated": false,
+      "id": "848a83a1-efa0-4c20-a1f5-a1da069c6643"
+    },
+    {
+      "source": "0082149f-5622-4af4-a0cc-23e9b4cdd32b",
+      "sourceHandle": "output-1",
+      "target": "d7e4a992-9bce-41ae-9608-c45725302652",
+      "targetHandle": "input-0",
+      "type": "power",
+      "animated": false,
+      "id": "5c1965bf-1e47-462f-89cd-cf8b60432456"
+    },
+    {
+      "source": "4e9a4cb6-f623-4a62-9ae3-a01f42307954",
+      "sourceHandle": "output-3",
+      "target": "8d2ee3d7-6768-4e3b-bffb-408284b83cab",
+      "targetHandle": "input-0",
+      "type": "power",
+      "animated": false,
+      "id": "41fe8a1a-75ef-47e0-a143-b3928db7074e"
+    },
+    {
+      "source": "8d2ee3d7-6768-4e3b-bffb-408284b83cab",
+      "sourceHandle": "output-0",
+      "target": "3f211686-5c29-45e3-84fd-a34264963490",
+      "targetHandle": "input-0",
+      "type": "power",
+      "animated": false,
+      "id": "59ad4939-1ca8-49fc-9b2c-d7d90e8e2ee3"
+    },
+    {
+      "source": "d7e4a992-9bce-41ae-9608-c45725302652",
+      "sourceHandle": "output-0",
+      "target": "8d2ee3d7-6768-4e3b-bffb-408284b83cab",
+      "targetHandle": "input-1",
+      "type": "power",
+      "animated": false,
+      "id": "deff1439-6de4-4b3f-947f-9497c3a8045e"
+    }
+  ],
+  "metadata": {
+    "createdAt": "2025-12-06T17:51:40.202Z",
+    "updatedAt": "2025-12-06T18:25:53.684Z"
+  }
+}

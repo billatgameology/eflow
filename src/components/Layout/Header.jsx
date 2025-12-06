@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useDiagramStore } from '../../stores/useDiagramStore';
 import { importDiagramFromFile } from '../../utils/persistence';
 import SaveLoadDialog from '../Dialogs/SaveLoadDialog';
+import dcSampleData from '../../data/dcSample.json';
 
 export default function Header() {
   const { exportDiagram, loadDiagram, reset, diagramName } = useDiagramStore();
@@ -31,6 +32,12 @@ export default function Header() {
     }
   };
 
+  const handleLoadDCSample = () => {
+    if (confirm('Load DC Sample diagram? Any unsaved changes will be lost.')) {
+      loadDiagram(dcSampleData);
+    }
+  };
+
   return (
     <>
       <header className="bg-gray-900 border-b border-gray-700 px-6 py-3">
@@ -43,6 +50,15 @@ export default function Header() {
           </div>
 
           <div className="flex gap-2">
+            <button
+              onClick={handleLoadDCSample}
+              className="px-3 py-1.5 bg-gray-800 text-gray-200 border border-gray-700 rounded hover:border-neon-magenta transition-colors text-sm font-medium flex items-center gap-1.5"
+              title="Load DC Sample diagram"
+            >
+              <span>⚡</span>
+              <span>DC Sample</span>
+            </button>
+            <div className="border-r border-gray-700"></div>
             <button
               onClick={handleNew}
               className="px-3 py-1.5 bg-gray-800 text-gray-200 border border-gray-700 rounded hover:border-neon-yellow transition-colors text-sm font-medium flex items-center gap-1.5"
